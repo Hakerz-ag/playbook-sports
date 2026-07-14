@@ -673,6 +673,7 @@
   <div class="nav-links">
     <a class="active" data-nav="markets" onclick="showMarkets()">Markets</a>
     <a data-nav="portfolio" onclick="showPortfolio()">Portfolio</a>
+    <a data-nav="leaderboard" onclick="showLeaderboard()">Leaderboard</a>
   </div>
   <div class="nav-right">
     <div class="nav-balance">
@@ -839,6 +840,27 @@
       <thead><tr><th>Time</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
       <tbody id="depositHistoryBody"><tr><td colspan="4" class="empty-state"><p>No deposits yet.</p></td></tr></tbody>
     </table></div></div>
+  </div>
+
+  <!-- ===== LEADERBOARD ===== -->
+  <div class="portfolio-view" id="leaderboardView">
+    <div class="section-title"><span>Leaderboard</span>
+      <span class="live-badge"><span class="live-dot"></span> Top traders</span>
+    </div>
+    <div style="background:var(--canvas);border-radius:var(--r-md);padding:20px;border:1px solid var(--hairline-soft);margin-bottom:16px;text-align:center;">
+      <div style="font-size:14px;color:var(--muted);margin-bottom:8px;">Your username</div>
+      <div style="display:flex;gap:8px;justify-content:center;align-items:center;max-width:400px;margin:0 auto;">
+        <input type="text" class="trade-input" id="usernameInput" placeholder="Enter a username" maxlength="20" style="text-align:center;flex:1;font-size:16px;">
+        <button class="btn-primary" onclick="saveUsername()" style="padding:10px 20px;font-size:14px;">Save</button>
+      </div>
+      <div id="yourRank" style="margin-top:12px;font-size:14px;"></div>
+    </div>
+    <div class="positions-table">
+      <div class="table-scroll"><table>
+        <thead><tr><th>#</th><th>Username</th><th>Token Balance</th><th>Trades</th><th>ROI</th><th>Rank</th></tr></thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table></div>
+    </div>
   </div>
 </div>
 </div>
@@ -1684,6 +1706,7 @@ function showPortfolio() {
   document.getElementById('marketsView').classList.add('hidden');
   document.getElementById('detailView').classList.remove('active');
   document.getElementById('portfolioView').classList.add('active');
+  document.getElementById('leaderboardView').classList.remove('active');
   let tv = 0, tc = 0;
   Object.keys(positions).forEach(id => {
     const m = markets.find(x => x.id === id); const pos = positions[id];
@@ -1721,7 +1744,89 @@ function showMarkets() {
   document.getElementById('marketsView').classList.remove('hidden');
   document.getElementById('detailView').classList.remove('active');
   document.getElementById('portfolioView').classList.remove('active');
+  document.getElementById('leaderboardView').classList.remove('active');
   renderMarkets();
+}
+
+// ===== LEADERBOARD =====
+const FAKE_USERS = [
+  { name: 'SportsOracle', balance: 47832, trades: 142, rank: 'Diamond' },
+  { name: 'TheGambler', balance: 32641, trades: 98, rank: 'Diamond' },
+  { name: 'PickleballKing', balance: 21503, trades: 77, rank: 'Platinum' },
+  { name: 'TouchdownTony', balance: 18920, trades: 65, rank: 'Platinum' },
+  { name: 'LineMovement', balance: 15287, trades: 51, rank: 'Gold' },
+  { name: 'BigBetBob', balance: 12450, trades: 89, rank: 'Gold' },
+  { name: 'SharpMoney', balance: 9873, trades: 44, rank: 'Gold' },
+  { name: 'FadeThePublic', balance: 7621, trades: 33, rank: 'Silver' },
+  { name: 'DegenDan', balance: 5400, trades: 67, rank: 'Silver' },
+  { name: 'UnderdogHunter', balance: 3892, trades: 28, rank: 'Silver' },
+  { name: 'CoinFlipChamp', balance: 2150, trades: 15, rank: 'Bronze' },
+  { name: 'SundayBettor', balance: 1340, trades: 12, rank: 'Bronze' },
+  { name: 'ParlayQueen', balance: 875, trades: 22, rank: 'Bronze' },
+  { name: 'NewbieTrader', balance: 320, trades: 5, rank: 'Bronze' },
+];
+
+function getRankIcon(rank) {
+  const icons = { Diamond: '💎', Platinum: '🏆', Gold: '🥇', Silver: '🥈', Bronze: '🥉' };
+  return icons[rank] || '';
+}
+
+function getUserRank(balance) {
+  if (balance >= 15000) return 'Diamond';
+  if (balance >= 8000) return 'Platinum';
+  if (balance >= 4000) return 'Gold';
+  if (balance >= 1000) return 'Silver';
+  return 'Bronze';
+}
+
+function saveUsername() {
+  const name = document.getElementById('usernameInput').value.trim();
+  if (!name) { showToast('Enter a username', 'error'); return; }
+  localStorage.setItem('playbook-username', name);
+  showToast(`Username saved: ${name}`, 'success');
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const username = localStorage.getItem('playbook-username') || 'You';
+  const myBalance = currentUser ? currentUser.balance : 0;
+  const myTrades = tradeHistory.length;
+  const myRank = getUserRank(myBalance);
+
+  // Combine fake users with current user
+  const all = [...FAKE_USERS, { name: username, balance: myBalance, trades: myTrades, rank: myRank, isYou: true }];
+  all.sort((a, b) => b.balance - a.balance);
+
+  document.getElementById('leaderboardBody').innerHTML = all.map((u, i) => {
+    const roi = u.trades > 0 ? (((u.balance - 1000) / 1000) * 100).toFixed(0) : 0;
+    return `<tr style="${u.isYou ? 'background:var(--primary-light);font-weight:600;' : ''}">
+      <td style="font-weight:700;font-size:16px;">${i + 1}</td>
+      <td style="font-weight:600;">${u.isYou ? '📍 ' : ''}${u.name}${u.isYou ? ' (You)' : ''}</td>
+      <td style="font-weight:700;color:var(--primary-active);">${u.balance.toLocaleString()} ◈</td>
+      <td>${u.trades}</td>
+      <td style="color:${parseInt(roi) >= 0 ? 'var(--primary-active)' : 'var(--red)'};">${parseInt(roi) >= 0 ? '+' : ''}${roi}%</td>
+      <td>${getRankIcon(u.rank)} ${u.rank}</td>
+    </tr>`;
+  }).join('');
+
+  // Show your rank
+  const myIndex = all.findIndex(u => u.isYou);
+  document.getElementById('yourRank').innerHTML = myIndex >= 0
+    ? `You are ranked <b>#${myIndex + 1}</b> of ${all.length} traders — ${getRankIcon(myRank)} ${myRank}`
+    : '';
+
+  // Pre-fill username
+  document.getElementById('usernameInput').value = username === 'You' ? '' : username;
+}
+
+function showLeaderboard() {
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.querySelector('[data-nav="leaderboard"]').classList.add('active');
+  document.getElementById('marketsView').classList.add('hidden');
+  document.getElementById('detailView').classList.remove('active');
+  document.getElementById('portfolioView').classList.remove('active');
+  document.getElementById('leaderboardView').classList.add('active');
+  renderLeaderboard();
 }
 
 // ===== DEPOSIT =====
