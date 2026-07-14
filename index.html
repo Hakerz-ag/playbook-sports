@@ -398,8 +398,21 @@
     .ob-row .ob-price { flex: 1; text-align: center; font-weight: 600; color: var(--ink); }
     .ob-row .ob-size { flex: 1; text-align: right; color: var(--muted); }
 
-    .chart-container { position: relative; height: 120px; margin-top: var(--s-sm); }
+    .chart-container { position: relative; height: 160px; margin-top: var(--s-sm); }
     #priceChart { width: 100%; height: 100%; }
+    .timeframe-bar { display: flex; gap: 4px; margin-bottom: var(--s-sm); }
+    .tf-btn {
+      padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--hairline);
+      font-size: 12px; font-weight: 600; cursor: pointer; background: var(--canvas);
+      color: var(--muted); transition: all 0.2s; font-family: inherit;
+    }
+    .tf-btn:hover { border-color: var(--primary-border); color: var(--ink); }
+    .tf-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .chart-price-label {
+      position: absolute; top: 4px; left: 8px;
+      font-size: 11px; font-weight: 500; color: var(--muted);
+      pointer-events: none;
+    }
 
     /* ===== PORTFOLIO ===== */
     .portfolio-view { display: none; }
@@ -599,6 +612,17 @@
 </head>
 <body>
 
+<!-- ===== 18+ AGE GATE ===== -->
+<div class="modal-overlay active" id="ageGate" style="z-index:500;">
+  <div class="modal" style="text-align:center;max-width:400px;">
+    <div style="font-size:48px;margin-bottom:16px;">🔞</div>
+    <h3 style="margin-bottom:8px;">18+ Only</h3>
+    <p class="sub" style="margin-bottom:24px;">This is a prediction market platform. You must be 18 years or older to use PlayBook. Paper money only — no real funds.</p>
+    <button class="btn-deposit-final" onclick="confirmAge()" style="margin-bottom:12px;">I am 18 or older — Enter</button>
+    <div style="font-size:13px;"><a href="https://www.google.com" style="color:var(--muted);text-decoration:none;cursor:pointer;">I am under 18 — Leave</a></div>
+  </div>
+</div>
+
 <!-- ===== AUTH SCREEN ===== -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
@@ -711,7 +735,15 @@
             <div class="big-price yes"><div class="label">YES</div><div class="price" id="detailYesPrice">--</div><div class="sub" id="detailYesShares">--</div></div>
             <div class="big-price no"><div class="label">NO</div><div class="price" id="detailNoPrice">--</div><div class="sub" id="detailNoShares">--</div></div>
           </div>
-          <div class="chart-container"><svg id="priceChart"></svg></div>
+          <div class="timeframe-bar">
+            <button class="tf-btn active" onclick="setTimeframe('all', this)">All</button>
+            <button class="tf-btn" onclick="setTimeframe('5m', this)">5m</button>
+            <button class="tf-btn" onclick="setTimeframe('15m', this)">15m</button>
+            <button class="tf-btn" onclick="setTimeframe('1h', this)">1h</button>
+          </div>
+          <div class="chart-container">
+            <svg id="priceChart"></svg>
+          </div>
         </div>
         <div class="panel"><h4>Order book</h4><div class="orderbook" id="orderBook"></div></div>
         <div class="panel"><h4>Market details</h4><p id="detailDescription" style="font-size:14px;color:var(--body);line-height:1.5;"></p></div>
@@ -924,7 +956,21 @@ function saveLocal() {
   localStorage.setItem('playbook-deposits', JSON.stringify(depositHistory));
 }
 
+// ===== AGE GATE =====
+function confirmAge() {
+  localStorage.setItem('playbook-age-confirmed', 'true');
+  document.getElementById('ageGate').classList.remove('active');
+  checkAuth();
+}
+
 async function checkAuth() {
+  // Check age gate first
+  if (localStorage.getItem('playbook-age-confirmed') !== 'true') {
+    document.getElementById('ageGate').classList.add('active');
+    return;
+  }
+  document.getElementById('ageGate').classList.remove('active');
+
   // No login -- go straight to app with localStorage persistence
   currentUser = { id: 0, name: 'Guest', email: '', phone: '', balance: parseFloat(localStorage.getItem('playbook-balance') || '1000') };
   positions = JSON.parse(localStorage.getItem('playbook-positions') || '{}');
@@ -1002,25 +1048,45 @@ function toggleLiveMode() {
 
 function rebuildCategoryFilters(isLive) {
   const container = document.getElementById('catFilters');
+  const catNames = { nfl:'NFL', nba:'NBA', mlb:'MLB', nhl:'NHL', mls:'MLS', epl:'EPL', la_liga:'La Liga', la_liga2:'La Liga 2', bundesliga:'Bundesliga', serie_a:'Serie A', ligue_1:'Ligue 1', eredivisie:'Eredivisie', liga_portugal:'Primeira Liga', super_lig:'Super Lig', pro_league:'Pro League', liga_mx:'Liga MX', argentina:'Argentina', brasil:'Brasileirao', champions:'Champions Lg', europa:'Europa Lg', conference:'Conference Lg', euros:'Euros', world_cup:'World Cup', wwc:"Women's WC", gold_cup:'Gold Cup', f1:'F1', atp:'ATP Tennis', wta:'WTA Tennis', pga:'PGA Golf', lpga:'LPGA Golf', ryder_cup:'Ryder Cup', ufc:'UFC', boxing:'Boxing', cfb:'College FB', xfl:'XFL', ufl:'UFL', cbb:'College BB', wnba:'WNBA', cbb2:'College Baseball', c_hockey:'College Hockey', soccer:'Soccer', ufc_mma:'UFC MMA' };
+  const catIcons = { nfl:'🏈', nba:'🏀', mlb:'⚾', nhl:'🏒', mls:'⚽', epl:'⚽', la_liga:'⚽', la_liga2:'⚽', bundesliga:'⚽', serie_a:'⚽', ligue_1:'⚽', eredivisie:'⚽', liga_portugal:'⚽', super_lig:'⚽', pro_league:'⚽', liga_mx:'⚽', argentina:'⚽', brasil:'⚽', champions:'⚽', europa:'⚽', conference:'⚽', euros:'⚽', world_cup:'⚽', wwc:'⚽', gold_cup:'⚽', f1:'🏎️', atp:'🎾', wta:'🎾', pga:'⛳', lpga:'⛳', ryder_cup:'⛳', ufc:'🥊', boxing:'🥊', cfb:'🏈', xfl:'🏈', ufl:'🏈', cbb:'🏀', wnba:'🏀', cbb2:'⚾', c_hockey:'🏒', soccer:'⚽', ufc_mma:'🥊' };
+
   if (isLive) {
-    // Get unique categories from live markets
     const cats = [...new Set(liveMarkets.map(m => m.cat))];
-    const catNames = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', mls: 'MLS', epl: 'EPL', la_liga: 'La Liga', f1: 'F1', atp: 'Tennis', cfb: 'CFB', soccer: 'Soccer' };
-    const catIcons = { nfl: '🏈', nba: '🏀', mlb: '⚾', nhl: '🏒', mls: '⚽', epl: '⚽', la_liga: '⚽', f1: '🏎️', atp: '🎾', cfb: '🏈', soccer: '⚽' };
     container.innerHTML = `<div class="cat-filter active" data-cat="all" onclick="filterCategory('all')">All live</div>` +
       cats.map(c => `<div class="cat-filter" data-cat="${c}" onclick="filterCategory('${c}')">${catIcons[c] || ''} ${catNames[c] || c}</div>`).join('');
   } else {
+    // Static demo sports + all ESPN sports in filter
     container.innerHTML = `
       <div class="cat-filter active" data-cat="all" onclick="filterCategory('all')">All sports</div>
       <div class="cat-filter" data-cat="nfl" onclick="filterCategory('nfl')">🏈 NFL</div>
+      <div class="cat-filter" data-cat="cfb" onclick="filterCategory('cfb')">🏈 College FB</div>
+      <div class="cat-filter" data-cat="xfl" onclick="filterCategory('xfl')">🏈 XFL</div>
+      <div class="cat-filter" data-cat="ufl" onclick="filterCategory('ufl')">🏈 UFL</div>
       <div class="cat-filter" data-cat="nba" onclick="filterCategory('nba')">🏀 NBA</div>
+      <div class="cat-filter" data-cat="cbb" onclick="filterCategory('cbb')">🏀 College BB</div>
+      <div class="cat-filter" data-cat="wnba" onclick="filterCategory('wnba')">🏀 WNBA</div>
       <div class="cat-filter" data-cat="mlb" onclick="filterCategory('mlb')">⚾ MLB</div>
+      <div class="cat-filter" data-cat="cbb2" onclick="filterCategory('cbb2')">⚾ College BB</div>
+      <div class="cat-filter" data-cat="nhl" onclick="filterCategory('nhl')">🏒 NHL</div>
+      <div class="cat-filter" data-cat="c_hockey" onclick="filterCategory('c_hockey')">🏒 College HKY</div>
+      <div class="cat-filter" data-cat="epl" onclick="filterCategory('epl')">⚽ EPL</div>
+      <div class="cat-filter" data-cat="la_liga" onclick="filterCategory('la_liga')">⚽ La Liga</div>
+      <div class="cat-filter" data-cat="bundesliga" onclick="filterCategory('bundesliga')">⚽ Bundesliga</div>
+      <div class="cat-filter" data-cat="serie_a" onclick="filterCategory('serie_a')">⚽ Serie A</div>
+      <div class="cat-filter" data-cat="ligue_1" onclick="filterCategory('ligue_1')">⚽ Ligue 1</div>
       <div class="cat-filter" data-cat="mls" onclick="filterCategory('mls')">⚽ MLS</div>
+      <div class="cat-filter" data-cat="liga_mx" onclick="filterCategory('liga_mx')">⚽ Liga MX</div>
+      <div class="cat-filter" data-cat="champions" onclick="filterCategory('champions')">⚽ Champions Lg</div>
+      <div class="cat-filter" data-cat="world_cup" onclick="filterCategory('world_cup')">⚽ World Cup</div>
       <div class="cat-filter" data-cat="f1" onclick="filterCategory('f1')">🏎️ F1</div>
+      <div class="cat-filter" data-cat="atp" onclick="filterCategory('atp')">🎾 ATP Tennis</div>
+      <div class="cat-filter" data-cat="wta" onclick="filterCategory('wta')">🎾 WTA Tennis</div>
+      <div class="cat-filter" data-cat="pga" onclick="filterCategory('pga')">⛳ PGA Golf</div>
       <div class="cat-filter" data-cat="ufc" onclick="filterCategory('ufc')">🥊 UFC</div>
+      <div class="cat-filter" data-cat="boxing" onclick="filterCategory('boxing')">🥊 Boxing</div>
       <div class="cat-filter" data-cat="tennis" onclick="filterCategory('tennis')">🎾 Tennis</div>
       <div class="cat-filter" data-cat="golf" onclick="filterCategory('golf')">⛳ Golf</div>
-      <div class="cat-filter" data-cat="nhl" onclick="filterCategory('nhl')">🏒 NHL</div>
       <div class="cat-filter" data-cat="soccer" onclick="filterCategory('soccer')">⚽ Soccer</div>`;
   }
 }
@@ -1141,15 +1207,107 @@ function renderOrderBook(m) {
   document.getElementById('orderBook').innerHTML = `<div class="ob-row" style="font-weight:500;color:var(--muted);font-size:12px;"><span class="ob-side">Side</span><span class="ob-price">Price</span><span class="ob-size">Size</span></div>` + m.orderBook.map(o => `<div class="ob-row"><span class="ob-side ${o.side === 'YES' ? 'yes' : 'no'}">${o.side}</span><span class="ob-price">${o.price}¢</span><span class="ob-size">${o.size.toLocaleString()}</span></div>`).join('');
 }
 
+// ===== CHART WITH TIMEFRAMES =====
+let chartTimeframe = 'all';
+
+function setTimeframe(tf, btn) {
+  chartTimeframe = tf;
+  document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
+  if (m) renderChart(m);
+}
+
+function getChartHistory(m) {
+  const hist = m.priceHistory || [];
+  if (chartTimeframe === 'all') return hist;
+  // Timeframes: 5m = last 75 ticks (~5min at 4s intervals), 15m = last 225, 1h = last 900
+  const limits = { '5m': 75, '15m': 225, '1h': 900 };
+  const limit = limits[chartTimeframe] || hist.length;
+  return hist.slice(-limit);
+}
+
 function renderChart(m) {
   const svg = document.getElementById('priceChart');
-  const w = svg.clientWidth || 400, h = 120, pad = 8;
-  const data = m.priceHistory, min = Math.min(...data) - 2, max = Math.max(...data) + 2, range = max - min || 1;
-  const pts = data.map((v, i) => [pad + (i / (data.length - 1)) * (w - 2 * pad), h - pad - ((v - min) / range) * (h - 2 * pad)]);
-  const pd = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
-  const ad = pd + ` L${pts[pts.length-1][0]},${h-pad} L${pad},${h-pad} Z`;
-  const up = data[data.length-1] >= data[0]; const color = up ? '#1976d2' : '#e53935';
-  svg.innerHTML = `<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.15"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${ad}" fill="url(#cg)"/><path d="${pd}" fill="none" stroke="${color}" stroke-width="2"/><circle cx="${pts[pts.length-1][0]}" cy="${pts[pts.length-1][1]}" r="4" fill="${color}"/><text x="${w-pad}" y="${pad+8}" text-anchor="end" font-size="12" font-weight="600" fill="${color}">${m.yes}¢</text>`;
+  if (!svg) return;
+  const w = svg.clientWidth || 400, h = 160, padL = 8, padR = 44, padT = 18, padB = 18;
+  const data = getChartHistory(m);
+  if (data.length < 2) return;
+
+  // Y-axis: exact cent values, show every 1c change
+  const rawMin = Math.min(...data);
+  const rawMax = Math.max(...data);
+  // Ensure at least 5c range so tiny changes are visible
+  const center = (rawMin + rawMax) / 2;
+  const halfRange = Math.max(3, (rawMax - rawMin) / 2 + 1);
+  const min = Math.max(0, Math.floor(center - halfRange));
+  const max = Math.min(100, Math.ceil(center + halfRange));
+  const range = max - min || 1;
+
+  // Price labels (Y-axis) -- show at least 4 price points
+  const yLabels = [];
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const val = Math.round(min + (range / steps) * i);
+    const y = h - padB - ((val - min) / range) * (h - padT - padB);
+    yLabels.push({ val, y });
+  }
+
+  // Plot points
+  const pts = data.map((v, i) => {
+    const x = padL + (i / (data.length - 1)) * (w - padL - padR);
+    const y = h - padB - ((v - min) / range) * (h - padT - padB);
+    return [x, y, v];
+  });
+
+  const pd = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const ad = pd + ` L${pts[pts.length-1][0].toFixed(1)},${h-padB} L${padL},${h-padB} Z`;
+  const up = data[data.length-1] >= data[0];
+  const color = up ? '#1976d2' : '#e53935';
+
+  // Build grid lines + Y-axis price labels
+  let gridSVG = '';
+  yLabels.forEach(yl => {
+    gridSVG += `<line x1="${padL}" y1="${yl.y}" x2="${w-padR}" y2="${yl.y}" stroke="var(--hairline-soft)" stroke-width="1" stroke-dasharray="2,3"/>`;
+    gridSVG += `<text x="${w-padR+4}" y="${yl.y+4}" font-size="10" font-weight="500" fill="var(--muted)">${yl.val}¢</text>`;
+  });
+
+  // X-axis time labels based on timeframe
+  let xLabels = '';
+  const tfLabels = {
+    '5m': ['5m ago', '4m', '3m', '2m', '1m', 'now'],
+    '15m': ['15m ago', '12m', '9m', '6m', '3m', 'now'],
+    '1h': ['1h ago', '45m', '30m', '15m', '5m', 'now'],
+    'all': ['start', '', '', '', '', 'now'],
+  };
+  const labels = tfLabels[chartTimeframe] || tfLabels['all'];
+  for (let i = 0; i < labels.length; i++) {
+    const x = padL + (i / (labels.length - 1)) * (w - padL - padR);
+    if (labels[i]) xLabels += `<text x="${x}" y="${h-4}" text-anchor="middle" font-size="9" fill="var(--muted)">${labels[i]}</text>`;
+  }
+
+  // Current price dot + label
+  const lastPt = pts[pts.length - 1];
+  const prevPt = pts[pts.length - 2] || pts[0];
+  const change = data[data.length-1] - data[0];
+  const changeColor = change >= 0 ? '#1976d2' : '#e53935';
+
+  svg.innerHTML = `
+    <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${gridSVG}
+    <path d="${ad}" fill="url(#cg)"/>
+    <path d="${pd}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    <line x1="${lastPt[0].toFixed(1)}" y1="${padT}" x2="${lastPt[0].toFixed(1)}" y2="${h-padB}" stroke="${color}" stroke-width="1" stroke-dasharray="2,3" opacity="0.4"/>
+    <circle cx="${lastPt[0].toFixed(1)}" cy="${lastPt[1].toFixed(1)}" r="4" fill="${color}"/>
+    <circle cx="${lastPt[0].toFixed(1)}" cy="${lastPt[1].toFixed(1)}" r="7" fill="${color}" opacity="0.2"/>
+    <rect x="${lastPt[0].toFixed(1)-18}" y="${lastPt[1].toFixed(1)-22}" width="36" height="16" rx="4" fill="${color}"/>
+    <text x="${lastPt[0].toFixed(1)}" y="${lastPt[1].toFixed(1)-10}" text-anchor="middle" font-size="11" font-weight="700" fill="white">${lastPt[2]}¢</text>
+    <text x="${w-padR+4}" y="${padT+4}" font-size="10" font-weight="600" fill="${changeColor}">${change >= 0 ? '+' : ''}${change}¢</text>
+    ${xLabels}
+  `;
 }
 
 function setTradeSide(side) {

@@ -291,18 +291,57 @@ app.get('/api/admin/users', (req, res) => {
 
 // ===== ESPN API PROXY — Free, no key needed =====
 
-// Sport league mapping
+// Sport league mapping — ALL sports
 const ESPN_SPORTS = {
+  // Football
   nfl: { path: 'football/nfl', label: 'NFL', icon: '🏈' },
+  cfb: { path: 'football/college-football', label: 'College FB', icon: '🏈' },
+  xfl: { path: 'football/xfl', label: 'XFL', icon: '🏈' },
+  ufl: { path: 'football/ufl', label: 'UFL', icon: '🏈' },
+  // Basketball
   nba: { path: 'basketball/nba', label: 'NBA', icon: '🏀' },
+  cbb: { path: 'basketball/mens-college-basketball', label: 'College BB', icon: '🏀' },
+  wnba: { path: 'basketball/wnba', label: 'WNBA', icon: '🏀' },
+  // Baseball
   mlb: { path: 'baseball/mlb', label: 'MLB', icon: '⚾' },
+  cbb2: { path: 'baseball/college-baseball', label: 'College Baseball', icon: '⚾' },
+  // Hockey
   nhl: { path: 'hockey/nhl', label: 'NHL', icon: '🏒' },
+  c_hockey: { path: 'hockey/mens-college-hockey', label: 'College Hockey', icon: '🏒' },
+  // Soccer
   epl: { path: 'soccer/eng.1', label: 'EPL', icon: '⚽' },
   la_liga: { path: 'soccer/esp.1', label: 'La Liga', icon: '⚽' },
+  la_liga2: { path: 'soccer/esp.2', label: 'La Liga 2', icon: '⚽' },
+  bundesliga: { path: 'soccer/ger.1', label: 'Bundesliga', icon: '⚽' },
+  serie_a: { path: 'soccer/ita.1', label: 'Serie A', icon: '⚽' },
+  ligue_1: { path: 'soccer/fra.1', label: 'Ligue 1', icon: '⚽' },
+  eredivisie: { path: 'soccer/ned.1', label: 'Eredivisie', icon: '⚽' },
+  liga_portugal: { path: 'soccer/por.1', label: 'Primeira Liga', icon: '⚽' },
+  super_lig: { path: 'soccer/tur.1', label: 'Super Lig', icon: '⚽' },
+  pro_league: { path: 'soccer/bel.1', label: 'Pro League', icon: '⚽' },
   mls: { path: 'soccer/usa.1', label: 'MLS', icon: '⚽' },
+  liga_mx: { path: 'soccer/mex.1', label: 'Liga MX', icon: '⚽' },
+  argentina: { path: 'soccer/arg.1', label: 'Argentina', icon: '⚽' },
+  brasil: { path: 'soccer/bra.1', label: 'Brasileirao', icon: '⚽' },
+  champions: { path: 'soccer/uefa.champions', label: 'Champions League', icon: '⚽' },
+  europa: { path: 'soccer/uefa.europa', label: 'Europa League', icon: '⚽' },
+  conference: { path: 'soccer/uefa.europa.conf', label: 'Conference League', icon: '⚽' },
+  euros: { path: 'soccer/uefa.euro', label: 'Euros', icon: '⚽' },
+  world_cup: { path: 'soccer/fifa.world', label: 'World Cup', icon: '⚽' },
+  wwc: { path: 'soccer/fifa.wwc', label: "Women's WC", icon: '⚽' },
+  gold_cup: { path: 'soccer/concacaf.gold', label: 'Gold Cup', icon: '⚽' },
+  // Racing
   f1: { path: 'racing/f1', label: 'F1', icon: '🏎️' },
-  atp: { path: 'tennis/atp', label: 'Tennis', icon: '🎾' },
-  cfb: { path: 'football/college-football', label: 'CFB', icon: '🏈' },
+  // Tennis
+  atp: { path: 'tennis/atp', label: 'ATP Tennis', icon: '🎾' },
+  wta: { path: 'tennis/wta', label: 'WTA Tennis', icon: '🎾' },
+  // Golf
+  pga: { path: 'golf/pga', label: 'PGA Golf', icon: '⛳' },
+  lpga: { path: 'golf/lpga', label: 'LPGA Golf', icon: '⛳' },
+  ryder_cup: { path: 'golf/ryder-cup', label: 'Ryder Cup', icon: '⛳' },
+  // MMA & Boxing
+  ufc: { path: 'mma/ufc', label: 'UFC', icon: '🥊' },
+  boxing: { path: 'boxing/boxing', label: 'Boxing', icon: '🥊' },
 };
 
 // Convert moneyline odds to implied probability (0-100 cents)
