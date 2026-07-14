@@ -39,6 +39,12 @@
       --red-dark: #c62828;
       --link: #2e7d32;
 
+      /* Blue accent */
+      --blue: #1976d2;
+      --blue-active: #1565c0;
+      --blue-light: #e3f2fd;
+      --blue-border: #90caf9;
+
       /* Shadows — Airbnb single-tier + Uber pill-float */
       --shadow-card: rgba(46,125,50,0.04) 0 0 0 1px, rgba(46,125,50,0.06) 0 2px 6px, rgba(46,125,50,0.08) 0 4px 8px;
       --shadow-float: rgba(0,0,0,0.12) 0px 2px 8px 0px;
@@ -62,6 +68,45 @@
       --s-xl: 32px;
       --s-xxl: 48px;
       --s-section: 64px;
+    }
+
+    /* === DARK THEME === */
+    [data-theme="dark"] {
+      --primary: #66bb6a;
+      --primary-active: #81c784;
+      --primary-disabled: #2e3b2e;
+      --primary-light: #1b2e1b;
+      --primary-border: #2e5e2e;
+
+      --canvas: #1a1d1a;
+      --canvas-soft: #141714;
+      --canvas-softer: #1e221e;
+      --surface-strong: #252925;
+      --surface-pressed: #2e332e;
+
+      --ink: #e8f0e8;
+      --body: #b0c0b0;
+      --muted: #6a7d6a;
+      --muted-soft: #4a5a4a;
+
+      --hairline: #2a302a;
+      --hairline-soft: #222622;
+      --border-strong: #3a403a;
+
+      --red: #ef5350;
+      --red-bg: #2e1a1a;
+      --red-dark: #ef5350;
+      --link: #81c784;
+
+      /* Blue accent (dark) */
+      --blue: #42a5f5;
+      --blue-active: #64b5f6;
+      --blue-light: #0d1f3d;
+      --blue-border: #1565c0;
+
+      --shadow-card: rgba(0,0,0,0.3) 0 0 0 1px, rgba(0,0,0,0.4) 0 2px 6px, rgba(0,0,0,0.5) 0 4px 8px;
+      --shadow-float: rgba(0,0,0,0.4) 0px 2px 8px 0px;
+      --shadow-modal: rgba(0,0,0,0.5) 0px 4px 16px 0px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -753,6 +798,86 @@
     }
     footer a { color: var(--link); text-decoration: none; font-weight: 400; }
 
+    /* ===== THEME TOGGLE ===== */
+    .theme-toggle {
+      background: var(--canvas-soft);
+      border: 1px solid var(--hairline);
+      border-radius: var(--r-pill);
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+      font-size: 18px; line-height: 1;
+      padding: 0;
+    }
+    .theme-toggle:hover { border-color: var(--border-strong); }
+    .theme-icon-dark { display: none; }
+    [data-theme="dark"] .theme-icon-light { display: none; }
+    [data-theme="dark"] .theme-icon-dark { display: inline; }
+
+    /* Dark mode badge overrides */
+    [data-theme="dark"] .badge-nfl { background: #0d1f3d; color: #64b5f6; }
+    [data-theme="dark"] .badge-nba { background: #2e1e0a; color: #ffb74d; }
+    [data-theme="dark"] .badge-mlb { background: #2e1a1a; color: #ef5350; }
+    [data-theme="dark"] .badge-mls { background: #1b2e1b; color: #81c784; }
+    [data-theme="dark"] .badge-f1 { background: #2e0a0a; color: #ef5350; }
+    [data-theme="dark"] .badge-ufc { background: #2a2018; color: #bcaaa4; }
+    [data-theme="dark"] .badge-tennis { background: #1b2e1b; color: #81c784; }
+    [data-theme="dark"] .badge-golf { background: #1a2410; color: #aed581; }
+    [data-theme="dark"] .badge-olympics { background: #0d1f3d; color: #64b5f6; }
+    [data-theme="dark"] .badge-soccer { background: #1b2e1b; color: #81c784; }
+    [data-theme="dark"] .badge-nhl { background: #0d1f3d; color: #64b5f6; }
+
+    /* Dark mode hero */
+    [data-theme="dark"] .hero { background: var(--canvas); }
+    [data-theme="dark"] .hero::after { background: radial-gradient(circle, rgba(102,187,106,0.06) 0%, transparent 70%); }
+
+    /* Dark mode amount-btn active */
+    [data-theme="dark"] .amount-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary-active); }
+
+    /* Dark mode cat-filter active (use green not black) */
+    [data-theme="dark"] .cat-filter.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Dark mode modal overlay */
+    [data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.7); }
+
+    /* ===== BLUE ACCENT ===== */
+    .blue-accent { color: var(--blue); }
+    .btn-blue {
+      background: var(--blue);
+      color: white; border: none;
+      padding: var(--s-md) var(--s-lg);
+      border-radius: var(--r-pill);
+      font-weight: 600; font-size: 16px; line-height: 1.25;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn-blue:hover { background: var(--blue-active); }
+
+    /* Blue accent text on market cards */
+    .market-card .blue-price { font-size: 24px; font-weight: 700; color: var(--blue); letter-spacing: -0.5px; }
+
+    /* Blue badge variant */
+    .badge-blue { background: var(--blue-light); color: var(--blue-active); }
+
+    /* Blue progress bar segment */
+    .progress-blue { background: var(--blue); height: 100%; transition: width 0.5s; }
+
+    /* Blue big-price panel */
+    .big-price.blue { background: var(--blue-light); border-color: var(--blue-border); }
+    .big-price.blue .label { color: var(--blue-active); }
+    .big-price.blue .price { color: var(--blue); }
+
+    /* Blue trade tab */
+    .trade-tab.active.blue-tab { color: var(--blue-active); border-bottom-color: var(--blue); }
+    .btn-trade.blue { background: var(--blue); }
+    .btn-trade.blue:hover { background: var(--blue-active); }
+
+    /* Blue stat in portfolio */
+    .stat-card .change.blue { color: var(--blue-active); }
+    .positions-table .pos-blue { color: var(--blue-active); font-weight: 600; }
+
+    /* Blue deposit tab option */
+    .deposit-tab.blue-active { color: var(--blue-active); border-bottom-color: var(--blue); }
+
     /* Mobile */
     @media (max-width: 768px) {
       nav { height: 64px; padding: 0 var(--s-base); }
@@ -785,6 +910,10 @@
       <span class="label">Balance</span>
       <span class="amount" id="navBalance">$1,000.00</span>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+      <span class="theme-icon-light">🌙</span>
+      <span class="theme-icon-dark">☀️</span>
+    </button>
     <button class="btn-primary" onclick="openDepositModal()">+ Deposit</button>
   </div>
 </nav>
@@ -1417,6 +1546,19 @@ setInterval(() => {
 }, 4000);
 
 renderMarkets();
+
+// ===== THEME TOGGLE =====
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('playbook-theme', next);
+}
+// Load saved theme
+(function() {
+  const saved = localStorage.getItem('playbook-theme');
+  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+})();
 </script>
 </body>
 </html>
