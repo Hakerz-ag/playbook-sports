@@ -1563,15 +1563,119 @@ function updateYourPosition(m) {
   const el = document.getElementById('yourPosition');
   if (!pos) { el.innerHTML = 'No position yet.'; return; }
   const cp = pos.side === 'yes' ? m.yes : (100 - m.yes);
-  const val = (pos.shares * cp) / 100, pnl = val - pos.totalCost;
+  const val = (pos.shares * cp) / 100;
+  const cost = pos.totalCost;
+  const pnl = val - cost;
   const pc = pnl >= 0 ? 'pos-yes' : 'pos-no';
+  const pnlPct = cost > 0 ? (pnl / cost * 100).toFixed(1) : '0.0';
   el.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
     <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Side</span><span class="${pos.side === 'yes' ? 'pos-yes' : 'pos-no'}" style="font-weight:600;">${pos.side.toUpperCase()}</span></div>
-    <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Shares</span><span style="font-weight:500;">${pos.shares.toLocaleString()}</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Tokens in</span><span style="font-weight:500;">${fmtTokens(pos.totalCost)}</span></div>
     <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Avg price</span><span style="font-weight:500;">${pos.avgPrice}¢</span></div>
-    <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Current</span><span style="font-weight:500;">${cp}¢</span></div>
-    <div style="display:flex;justify-content:space-between;border-top:1px solid var(--hairline-soft);padding-top:8px;"><span style="color:var(--muted);">P&L</span><span class="${pc}" style="font-weight:600;">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Current price</span><span style="font-weight:500;">${cp}¢</span></div>
+    <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Current value</span><span style="font-weight:500;">${fmtTokens(val)}</span></div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid var(--hairline-soft);padding-top:8px;"><span style="color:var(--muted);">P&L</span><span class="${pc}" style="font-weight:700;">${pnl >= 0 ? '+' : ''}${fmtTokens(Math.abs(pnl))} (${pnl >= 0 ? '+' : ''}${pnlPct}%)</span></div>
+    <div style="margin-top:8px;border-top:1px solid var(--hairline-soft);padding-top:12px;">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Sell position</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <div class="quick-btn" style="flex:1;text-align:center;" onclick="setSellAmount(0.25)">25%</div>
+        <div class="quick-btn" style="flex:1;text-align:center;" onclick="setSellAmount(0.50)">50%</div>
+        <div class="quick-btn" style="flex:1;text-align:center;" onclick="setSellAmount(0.75)">75%</div>
+        <div class="quick-btn" style="flex:1;text-align:center;" onclick="setSellAmount(1)">All</div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <input type="number" class="trade-input" id="customSellAmount" placeholder="Custom tokens to sell" min="1" oninput="updateSellPreview()" style="padding:10px 12px;font-size:14px;">
+      </div>
+      <div id="sellPreview" style="background:var(--canvas-soft);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:8px;font-size:13px;display:none;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="color:var(--muted);">Sell at</span><span style="font-weight:600;">${cp}¢</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="color:var(--muted);">You receive</span><span id="sellReceive" style="font-weight:600;">0 ◈</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Loss/gain</span><span id="sellPnl" style="font-weight:600;">0 ◈</span></div>
+      </div>
+      <button class="btn-trade no" style="font-size:14px;padding:10px;" onclick="sellPosition()">Sell Position</button>
+    </div>
   </div>`;
+}
+
+function setSellAmount(fraction) {
+  const pos = positions[currentMarketId];
+  if (!pos) return;
+  const amt = Math.floor(pos.totalCost * fraction);
+  document.getElementById('customSellAmount').value = amt;
+  updateSellPreview();
+}
+
+function updateSellPreview() {
+  const pos = positions[currentMarketId];
+  if (!pos) return;
+  const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
+  if (!m) return;
+  const cp = pos.side === 'yes' ? m.yes : (100 - m.yes);
+  const sellAmt = parseInt(document.getElementById('customSellAmount').value) || 0;
+  // Proportional: sellAmt tokens worth of position
+  const ratio = Math.min(sellAmt / pos.totalCost, 1);
+  const sharesSold = pos.shares * ratio;
+  const receive = (sharesSold * cp) / 100;
+  const costPortion = pos.totalCost * ratio;
+  const pnl = receive - costPortion;
+  const preview = document.getElementById('sellPreview');
+  if (preview) {
+    preview.style.display = 'block';
+    document.getElementById('sellReceive').textContent = fmtTokens(receive);
+    const pnlEl = document.getElementById('sellPnl');
+    pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmtTokens(Math.abs(pnl));
+    pnlEl.style.color = pnl >= 0 ? 'var(--primary-active)' : 'var(--red)';
+  }
+}
+
+function sellPosition() {
+  const pos = positions[currentMarketId];
+  if (!pos) { showToast('No position to sell', 'error'); return; }
+  const sellAmt = parseInt(document.getElementById('customSellAmount').value) || 0;
+  if (sellAmt <= 0) { showToast('Enter amount to sell', 'error'); return; }
+  if (sellAmt > pos.totalCost) { showToast('Cannot sell more than position', 'error'); return; }
+
+  const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
+  const cp = pos.side === 'yes' ? m.yes : (100 - m.yes);
+  const ratio = sellAmt / pos.totalCost;
+  const sharesSold = pos.shares * ratio;
+  const receive = (sharesSold * cp) / 100;
+  const costPortion = pos.totalCost * ratio;
+  const pnl = receive - costPortion;
+
+  // Add tokens back to balance
+  currentUser.balance += receive;
+
+  // Reduce position
+  pos.totalCost -= costPortion;
+  pos.shares -= sharesSold;
+  if (pos.shares <= 0.01 || pos.totalCost <= 0.01) {
+    delete positions[currentMarketId];
+  } else {
+    pos.avgPrice = (pos.totalCost / pos.shares * 100).toFixed(1);
+  }
+
+  // Record trade
+  tradeHistory.unshift({
+    time: new Date().toLocaleTimeString(),
+    marketQuestion: m.q,
+    side: pos.side.toUpperCase() + ' SELL',
+    shares: Math.round(sharesSold),
+    price: cp + '¢',
+    cost: fmtTokens(receive),
+    payout: fmtTokens(costPortion),
+    mode: 'sell',
+    pnl: (pnl >= 0 ? '+' : '') + fmtTokens(Math.abs(pnl))
+  });
+
+  // Move price against the sell
+  if (pos.side === 'yes') m.yes = Math.max(1, m.yes - Math.ceil(sellAmt / 500));
+  else m.yes = Math.min(99, m.yes + Math.ceil(sellAmt / 500));
+  m.priceHistory.push(m.yes); m.orderBook = generateOrderBook(m.yes);
+
+  saveLocal();
+  updateDetailPrices(m); renderOrderBook(m); renderChart(m); updateYourPosition(m);
+  updateBalanceDisplay(); updateTradeSummary();
+  showToast(`Sold ${fmtTokens(receive)} tokens @ ${cp}¢ | ${pnl >= 0 ? 'Profit' : 'Loss'}: ${pnl >= 0 ? '+' : ''}${fmtTokens(Math.abs(pnl))}`, pnl >= 0 ? 'success' : 'info');
 }
 
 function showPortfolio() {
