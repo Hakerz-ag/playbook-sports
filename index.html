@@ -659,7 +659,7 @@
       <span class="theme-icon-light">🌙</span>
       <span class="theme-icon-dark">☀️</span>
     </button>
-    <button class="btn-icon" onclick="signOut()" title="Sign out">⎋</button>
+    <button class="btn-icon" onclick="signOut()" title="Reset account">↻</button>
     <button class="btn-primary" onclick="openDepositModal()">+ Deposit</button>
   </div>
 </nav>
@@ -908,50 +908,29 @@ function setContactMethod(method) {
 }
 
 async function handleAuth() {
-  const btn = document.getElementById('btnAuth');
-  btn.disabled = true; btn.textContent = 'Please wait...';
-  const errEl = document.getElementById('authError');
-  errEl.classList.remove('show');
+  // Bypassed -- go straight to app
+  currentUser = { id: 0, name: 'Guest', email: '', phone: '', balance: parseFloat(localStorage.getItem('playbook-balance') || '1000') };
+  positions = JSON.parse(localStorage.getItem('playbook-positions') || '{}');
+  tradeHistory = JSON.parse(localStorage.getItem('playbook-trades') || '[]');
+  depositHistory = JSON.parse(localStorage.getItem('playbook-deposits') || '[]');
+  showApp();
+  showToast('Welcome to PlayBook!', 'success');
+}
 
-  const contact = document.getElementById('authContact').value.trim();
-  const password = document.getElementById('authPassword').value;
-  const name = document.getElementById('authName').value.trim();
-  const payload = { password };
-  if (contactMethod === 'email') payload.email = contact; else payload.phone = contact;
-  if (authMode === 'signup' && name) payload.name = name;
-
-  try {
-    const resp = await fetch(`${API}/api/${authMode}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await resp.json();
-    if (!data.success) {
-      errEl.textContent = data.error || 'Something went wrong';
-      errEl.classList.add('show');
-      btn.disabled = false; btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
-      return;
-    }
-    authToken = data.token;
-    localStorage.setItem('playbook-token', data.token);
-    currentUser = data.user;
-    showApp();
-    showToast(`Welcome, ${data.user.name}!`, 'success');
-  } catch (e) {
-    errEl.textContent = 'Cannot connect to server. Is it running?';
-    errEl.classList.add('show');
-    btn.disabled = false; btn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
-  }
+function saveLocal() {
+  localStorage.setItem('playbook-balance', currentUser.balance);
+  localStorage.setItem('playbook-positions', JSON.stringify(positions));
+  localStorage.setItem('playbook-trades', JSON.stringify(tradeHistory));
+  localStorage.setItem('playbook-deposits', JSON.stringify(depositHistory));
 }
 
 async function checkAuth() {
-  if (!authToken) { showAuth(); return; }
-  try {
-    const resp = await fetch(`${API}/api/me`, { headers: { 'Authorization': `Bearer ${authToken}` } });
-    const data = await resp.json();
-    if (data.success) { currentUser = data.user; showApp(); await loadPortfolioData(); }
-    else { showAuth(); }
-  } catch (e) { showAuth(); }
+  // No login -- go straight to app with localStorage persistence
+  currentUser = { id: 0, name: 'Guest', email: '', phone: '', balance: parseFloat(localStorage.getItem('playbook-balance') || '1000') };
+  positions = JSON.parse(localStorage.getItem('playbook-positions') || '{}');
+  tradeHistory = JSON.parse(localStorage.getItem('playbook-trades') || '[]');
+  depositHistory = JSON.parse(localStorage.getItem('playbook-deposits') || '[]');
+  showApp();
 }
 
 function showAuth() {
@@ -1051,11 +1030,15 @@ function getActiveMarkets() {
 }
 
 async function signOut() {
-  try { await fetch(`${API}/api/signout`, { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}` } }); } catch(e) {}
+  localStorage.removeItem('playbook-balance');
+  localStorage.removeItem('playbook-positions');
+  localStorage.removeItem('playbook-trades');
+  localStorage.removeItem('playbook-deposits');
   localStorage.removeItem('playbook-token');
-  authToken = null; currentUser = null;
-  showAuth();
-  showToast('Signed out', 'info');
+  currentUser = { id: 0, name: 'Guest', email: '', phone: '', balance: 1000.00 };
+  positions = {}; tradeHistory = []; depositHistory = [];
+  updateBalanceDisplay(); showMarkets();
+  showToast('Account reset. $1,000 balance restored.', 'info');
 }
 
 // ===== API CALLS =====
@@ -1197,17 +1180,26 @@ async function executeTrade() {
   const shares = parseInt(document.getElementById('tradeShares').value) || 0;
   const price = parseInt(document.getElementById('tradePrice').value) || 0;
   if (shares <= 0 || price <= 0 || price > 99) { showToast('Invalid trade', 'error'); return; }
+  const cost = (shares * price) / 100;
+  if (cost > currentUser.balance) { showToast('Insufficient balance. Deposit more.', 'error'); return; }
   const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
-  const data = await apiTrade(m.id, m.q, tradeSide, shares, price);
-  if (!data.success) { showToast(data.error || 'Trade failed', 'error'); return; }
-  currentUser.balance = data.balance;
-  await loadPortfolioData();
+
+  currentUser.balance -= cost;
+  if (!positions[currentMarketId]) positions[currentMarketId] = { side: tradeSide, shares: 0, totalCost: 0, marketQuestion: m.q };
+  const pos = positions[currentMarketId];
+  pos.shares += shares; pos.totalCost += cost;
+  pos.avgPrice = (pos.totalCost / pos.shares * 100).toFixed(1);
+
+  tradeHistory.unshift({ time: new Date().toLocaleTimeString(), marketQuestion: m.q, side: tradeSide.toUpperCase(), shares, price: price + '¢', cost: '$' + cost.toFixed(2) });
+
   if (tradeSide === 'yes') m.yes = Math.min(99, m.yes + Math.ceil(shares / 200));
   else m.yes = Math.max(1, m.yes - Math.ceil(shares / 200));
   m.priceHistory.push(m.yes); m.orderBook = generateOrderBook(m.yes);
+
+  saveLocal();
   updateDetailPrices(m); renderOrderBook(m); renderChart(m); updateYourPosition(m);
   updateBalanceDisplay(); updateTradeSummary();
-  showToast(`Bought ${shares} ${tradeSide.toUpperCase()} @ ${price}¢`, 'success');
+  showToast(`Bought ${shares} ${tradeSide.toUpperCase()} @ ${price}¢ for $${cost.toFixed(2)}`, 'success');
 }
 
 function updateYourPosition(m) {
@@ -1302,17 +1294,19 @@ function setCryptoAmount(amt) {
 async function processDeposit() {
   const amt = depositAmount || parseInt(document.getElementById('customDeposit').value) || 0;
   if (amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
-  const data = await apiDeposit(amt, 'Card');
-  if (data.success) { currentUser.balance = data.balance; updateBalanceDisplay(); await loadPortfolioData(); showToast(`Deposited $${amt.toFixed(2)}`, 'success'); closeDepositModal(); }
-  else showToast(data.error || 'Deposit failed', 'error');
+  currentUser.balance += amt;
+  depositHistory.unshift({ time: new Date().toLocaleTimeString(), method: 'Card', amount: amt, status: 'Completed' });
+  saveLocal(); updateBalanceDisplay();
+  showToast(`Deposited $${amt.toFixed(2)}`, 'success'); closeDepositModal();
 }
 
 async function processCryptoDeposit() {
   const amt = cryptoAmount || parseInt(document.getElementById('cryptoDepositInput').value) || 0;
   if (amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
-  const data = await apiDeposit(amt, 'Crypto (USDT)');
-  if (data.success) { currentUser.balance = data.balance; updateBalanceDisplay(); await loadPortfolioData(); showToast(`Deposited $${amt.toFixed(2)} via Crypto`, 'success'); closeDepositModal(); }
-  else showToast(data.error || 'Deposit failed', 'error');
+  currentUser.balance += amt;
+  depositHistory.unshift({ time: new Date().toLocaleTimeString(), method: 'Crypto (USDT)', amount: amt, status: 'Completed' });
+  saveLocal(); updateBalanceDisplay();
+  showToast(`Deposited $${amt.toFixed(2)} via Crypto`, 'success'); closeDepositModal();
 }
 
 function copyWallet() { navigator.clipboard.writeText(document.getElementById('walletAddr').textContent).then(() => showToast('Wallet copied!', 'info')); }
