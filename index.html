@@ -676,15 +676,16 @@
   </div>
   <div class="nav-right">
     <div class="nav-balance">
-      <span class="label">Balance</span>
-      <span class="amount" id="navBalance">$1,000.00</span>
+      <span class="label">Tokens</span>
+      <span class="amount" id="navBalance">1,000 ◈</span>
     </div>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
       <span class="theme-icon-light">🌙</span>
       <span class="theme-icon-dark">☀️</span>
     </button>
     <button class="btn-icon" onclick="signOut()" title="Reset account">↻</button>
-    <button class="btn-primary" onclick="openDepositModal()">+ Deposit</button>
+    <button class="btn-primary" onclick="openDepositModal()">Buy Tokens</button>
+    <button class="btn-secondary" onclick="openWithdrawModal()" style="padding:8px 14px;font-size:14px;">Withdraw</button>
   </div>
 </nav>
 
@@ -750,32 +751,24 @@
       </div>
       <div class="detail-right">
         <div class="panel">
-          <h4>Place trade</h4>
+          <h4>Place bet — all in</h4>
+          <div style="background:var(--canvas-soft);border-radius:var(--r-md);padding:12px;margin-bottom:16px;text-align:center;">
+            <div style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px;">YOUR ENTIRE BALANCE</div>
+            <div style="font-size:28px;font-weight:800;color:var(--primary-active);letter-spacing:-0.5px;" id="betAllIn">0 ◈</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Win or lose it all</div>
+          </div>
           <div class="trade-tabs">
-            <div class="trade-tab yes-tab active" onclick="setTradeSide('yes')">Buy YES</div>
-            <div class="trade-tab no-tab" onclick="setTradeSide('no')">Buy NO</div>
-          </div>
-          <div class="trade-input-group">
-            <label>Shares</label>
-            <div class="input-suffix" data-suffix="shares"><input type="number" class="trade-input" id="tradeShares" placeholder="0" min="1" oninput="updateTradeSummary()" style="padding-right:56px;"></div>
-          </div>
-          <div class="quick-buttons">
-            <div class="quick-btn" onclick="setShareQuick(10)">10</div>
-            <div class="quick-btn" onclick="setShareQuick(25)">25</div>
-            <div class="quick-btn" onclick="setShareQuick(50)">50</div>
-            <div class="quick-btn" onclick="setShareQuick(100)">100</div>
-          </div>
-          <div class="trade-input-group">
-            <label>Price per share</label>
-            <div class="input-suffix" data-suffix="¢"><input type="number" class="trade-input" id="tradePrice" placeholder="50" min="1" max="99" oninput="updateTradeSummary()" style="padding-right:36px;"></div>
+            <div class="trade-tab yes-tab active" onclick="setTradeSide('yes')">Bet YES</div>
+            <div class="trade-tab no-tab" onclick="setTradeSide('no')">Bet NO</div>
           </div>
           <div class="trade-summary">
-            <div class="row"><span>Cost</span><span class="val" id="tradeCost">$0.00</span></div>
-            <div class="row"><span>Max payout</span><span class="val" id="tradePayout">$0.00</span></div>
-            <div class="row"><span>Potential profit</span><span class="val" id="tradeProfit">$0.00</span></div>
-            <div class="row total"><span>Total cost</span><span class="val" id="tradeTotal">$0.00</span></div>
+            <div class="row"><span>Bet amount</span><span class="val" id="tradeCost">0 ◈</span></div>
+            <div class="row"><span>Odds</span><span class="val" id="tradeOdds">--</span></div>
+            <div class="row"><span>If YES wins</span><span class="val" id="tradePayout" style="color:var(--primary-active);font-weight:700;">0 ◈</span></div>
+            <div class="row"><span>Potential profit</span><span class="val" id="tradeProfit" style="color:var(--primary-active);">0 ◈</span></div>
+            <div class="row total"><span>All in</span><span class="val" id="tradeTotal">0 ◈</span></div>
           </div>
-          <button class="btn-trade yes" id="btnTrade" onclick="executeTrade()">Buy YES shares</button>
+          <button class="btn-trade yes" id="btnTrade" onclick="executeTrade()">Bet ALL on YES</button>
         </div>
         <div class="panel"><h4>Your position</h4><div id="yourPosition" style="font-size:14px;color:var(--muted);">No position yet.</div></div>
       </div>
@@ -786,9 +779,9 @@
   <div class="portfolio-view" id="portfolioView">
     <div class="section-title"><span>Portfolio</span></div>
     <div class="portfolio-summary">
-      <div class="stat-card"><div class="label">Cash balance</div><div class="value" id="portCash">$0.00</div></div>
-      <div class="stat-card"><div class="label">Positions value</div><div class="value" id="portValue">$0.00</div></div>
-      <div class="stat-card"><div class="label">Total P&L</div><div class="value" id="portPnl">$0.00</div><div class="change" id="portPnlChange"></div></div>
+      <div class="stat-card"><div class="label">Token balance</div><div class="value" id="portCash">0 ◈</div></div>
+      <div class="stat-card"><div class="label">Positions value</div><div class="value" id="portValue">0 ◈</div></div>
+      <div class="stat-card"><div class="label">Total P&L</div><div class="value" id="portPnl">0 ◈</div><div class="change" id="portPnlChange"></div></div>
       <div class="stat-card"><div class="label">Open positions</div><div class="value" id="portCount">0</div></div>
     </div>
     <div class="section-title" style="margin-top:var(--s-xl);"><span>Open positions</span></div>
@@ -814,41 +807,98 @@
 <div class="modal-overlay" id="depositModal">
   <div class="modal">
     <button class="modal-close" onclick="closeDepositModal()">&times;</button>
-    <h3>Deposit paper money</h3>
-    <p class="sub">Add funds to your account. Play money only.</p>
+    <h3>Buy Tokens</h3>
+    <p class="sub">1 token = $1. Buy more, get bonus tokens. Paper money only.</p>
+
+    <!-- Bonus tiers display -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;">
+      <div style="background:var(--canvas-soft);border-radius:var(--r-md);padding:12px;text-align:center;border:1px solid var(--hairline-soft);">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;">$100+</div>
+        <div style="font-size:20px;font-weight:700;color:var(--primary-active);">+10%</div>
+        <div style="font-size:11px;color:var(--muted);">bonus tokens</div>
+      </div>
+      <div style="background:var(--canvas-soft);border-radius:var(--r-md);padding:12px;text-align:center;border:1px solid var(--hairline-soft);">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;">$500+</div>
+        <div style="font-size:20px;font-weight:700;color:var(--primary-active);">+15%</div>
+        <div style="font-size:11px;color:var(--muted);">bonus tokens</div>
+      </div>
+      <div style="background:var(--canvas-soft);border-radius:var(--r-md);padding:12px;text-align:center;border:1px solid var(--hairline-soft);">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;">$1,000+</div>
+        <div style="font-size:20px;font-weight:700;color:var(--primary-active);">+20%</div>
+        <div style="font-size:11px;color:var(--muted);">bonus tokens</div>
+      </div>
+    </div>
+
     <div class="deposit-tabs">
       <div class="deposit-tab active" data-method="card" onclick="setDepositMethod('card')">Card</div>
       <div class="deposit-tab" data-method="crypto" onclick="setDepositMethod('crypto')">Crypto</div>
     </div>
     <div id="cardDeposit">
       <div class="amount-buttons">
-        <div class="amount-btn" onclick="setDepositAmount(50)" data-amt="50">$50</div>
-        <div class="amount-btn active" onclick="setDepositAmount(100)" data-amt="100">$100</div>
-        <div class="amount-btn" onclick="setDepositAmount(500)" data-amt="500">$500</div>
-        <div class="amount-btn" onclick="setDepositAmount(1000)" data-amt="1000">$1,000</div>
+        <div class="amount-btn" onclick="setDepositAmount(50)" data-amt="50">$50 → 50 ◈</div>
+        <div class="amount-btn active" onclick="setDepositAmount(100)" data-amt="100">$100 → 110 ◈</div>
+        <div class="amount-btn" onclick="setDepositAmount(500)" data-amt="500">$500 → 575 ◈</div>
+        <div class="amount-btn" onclick="setDepositAmount(1000)" data-amt="1000">$1,000 → 1,200 ◈</div>
       </div>
-      <div class="custom-amount"><label>Custom amount</label><input type="number" id="customDeposit" placeholder="Enter amount" min="1" oninput="setDepositAmount(this.value)"></div>
-      <button class="btn-deposit-final" onclick="processDeposit()">Deposit $100</button>
+      <div class="custom-amount"><label>Custom amount (USD)</label><input type="number" id="customDeposit" placeholder="Enter USD amount" min="1" oninput="setDepositAmount(this.value)"></div>
+      <div id="depositBonusPreview" style="background:var(--primary-light);border-radius:var(--r-md);padding:12px;margin-bottom:16px;text-align:center;">
+        <span style="font-size:14px;font-weight:600;color:var(--primary-active);">Pay $100 → Receive 110 tokens (+10% bonus)</span>
+      </div>
+      <button class="btn-deposit-final" onclick="processDeposit()">Buy 110 tokens for $100</button>
     </div>
     <div id="cryptoDeposit" style="display:none;">
       <div class="crypto-info">
         <div class="row"><span class="label">Method</span><span class="val">Crypto (simulated)</span></div>
         <div class="row"><span class="label">Network</span><span class="val">BTC / ETH / USDT</span></div>
-        <div class="row"><span class="label">Rate</span><span class="val">1 USDT = $1.00</span></div>
+        <div class="row"><span class="label">Rate</span><span class="val">1 USDT = 1 ◈</span></div>
       </div>
       <div style="margin-bottom:var(--s-base);"><label style="font-size:14px;font-weight:500;color:var(--muted);display:block;margin-bottom:var(--s-sm);">Send to wallet</label>
         <div class="crypto-wallet" onclick="copyWallet()"><span class="addr" id="walletAddr">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</span><span class="copy">Copy</span></div>
       </div>
       <div class="amount-buttons">
-        <div class="amount-btn" onclick="setCryptoAmount(50)" data-amt="50">$50</div>
-        <div class="amount-btn active" onclick="setCryptoAmount(100)" data-amt="100">$100</div>
-        <div class="amount-btn" onclick="setCryptoAmount(500)" data-amt="500">$500</div>
-        <div class="amount-btn" onclick="setCryptoAmount(1000)" data-amt="1000">$1,000</div>
+        <div class="amount-btn" onclick="setCryptoAmount(50)" data-amt="50">$50 → 50 ◈</div>
+        <div class="amount-btn active" onclick="setCryptoAmount(100)" data-amt="100">$100 → 110 ◈</div>
+        <div class="amount-btn" onclick="setCryptoAmount(500)" data-amt="500">$500 → 575 ◈</div>
+        <div class="amount-btn" onclick="setCryptoAmount(1000)" data-amt="1000">$1,000 → 1,200 ◈</div>
       </div>
-      <div class="custom-amount"><label>Amount (USD)</label><input type="number" id="cryptoDepositInput" placeholder="Enter amount" min="1" value="100" oninput="setCryptoAmount(this.value)"></div>
-      <button class="btn-deposit-final" onclick="processCryptoDeposit()">Simulate crypto deposit — $100</button>
+      <div class="custom-amount"><label>Amount (USD equivalent)</label><input type="number" id="cryptoDepositInput" placeholder="Enter amount" min="1" value="100" oninput="setCryptoAmount(this.value)"></div>
+      <div id="cryptoBonusPreview" style="background:var(--primary-light);border-radius:var(--r-md);padding:12px;margin-bottom:16px;text-align:center;">
+        <span style="font-size:14px;font-weight:600;color:var(--primary-active);">Pay $100 → Receive 110 tokens (+10% bonus)</span>
+      </div>
+      <button class="btn-deposit-final" onclick="processCryptoDeposit()">Buy 110 tokens for $100</button>
     </div>
     <div class="deposit-history" id="depositHistoryDisplay"></div>
+  </div>
+</div>
+
+<!-- ===== WITHDRAW MODAL ===== -->
+<div class="modal-overlay" id="withdrawModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeWithdrawModal()">&times;</button>
+    <h3>Withdraw Tokens</h3>
+    <p class="sub">Cash out your tokens. 1 token = $1. Paper money only.</p>
+    <div style="background:var(--canvas-soft);border-radius:var(--r-md);padding:16px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--muted);">Available balance</span><span style="font-weight:700;font-size:18px;color:var(--primary-active);" id="withdrawAvailable">0 ◈</span></div>
+    </div>
+    <div class="custom-amount">
+      <label>Withdraw amount (tokens)</label>
+      <input type="number" id="withdrawAmount" placeholder="Enter token amount" min="1" oninput="updateWithdrawPreview()">
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="quick-btn" style="flex:1;" onclick="setWithdrawAmount(0.25)">25%</button>
+      <button class="quick-btn" style="flex:1;" onclick="setWithdrawAmount(0.50)">50%</button>
+      <button class="quick-btn" style="flex:1;" onclick="setWithdrawAmount(0.75)">75%</button>
+      <button class="quick-btn" style="flex:1;" onclick="setWithdrawAmount(1)">Max</button>
+    </div>
+    <div class="deposit-tabs">
+      <div class="deposit-tab active" data-method="card" onclick="setWithdrawMethod('card')">Card</div>
+      <div class="deposit-tab" data-method="crypto" onclick="setWithdrawMethod('crypto')">Crypto</div>
+    </div>
+    <div id="withdrawPreview" style="background:var(--primary-light);border-radius:var(--r-md);padding:12px;margin-bottom:16px;text-align:center;">
+      <span style="font-size:14px;font-weight:600;color:var(--primary-active);">Withdraw 0 tokens → $0.00</span>
+    </div>
+    <button class="btn-deposit-final" onclick="processWithdraw()">Withdraw Tokens</button>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;">Withdrawals are instant. Paper money only.</div>
   </div>
 </div>
 
@@ -956,7 +1006,19 @@ function saveLocal() {
   localStorage.setItem('playbook-deposits', JSON.stringify(depositHistory));
 }
 
-// ===== AGE GATE =====
+function fmtTokens(n) { return Math.round(n).toLocaleString() + ' ◈'; }
+
+// ===== BONUS TIERS =====
+function getBonusPct(amount) {
+  if (amount >= 1000) return 20;
+  if (amount >= 500) return 15;
+  if (amount >= 100) return 10;
+  return 0;
+}
+function calcTokens(usd) {
+  const bonus = getBonusPct(usd);
+  return Math.round(usd * (1 + bonus / 100));
+}
 function confirmAge() {
   localStorage.setItem('playbook-age-confirmed', 'true');
   document.getElementById('ageGate').classList.remove('active');
@@ -1314,50 +1376,68 @@ function setTradeSide(side) {
   tradeSide = side;
   document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
   document.querySelector(side === 'yes' ? '.yes-tab' : '.no-tab').classList.add('active');
-  const m = markets.find(x => x.id === currentMarketId);
-  if (m) document.getElementById('tradePrice').value = side === 'yes' ? m.yes : (100 - m.yes);
+  const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
   const btn = document.getElementById('btnTrade');
-  btn.className = 'btn-trade ' + side; btn.textContent = `Buy ${side.toUpperCase()} shares`;
+  btn.className = 'btn-trade ' + side; btn.textContent = `Bet ALL on ${side.toUpperCase()}`;
   updateTradeSummary();
 }
 
-function setShareQuick(n) { document.getElementById('tradeShares').value = n; updateTradeSummary(); }
+function setShareQuick(n) { /* unused in all-in mode */ }
 
 function updateTradeSummary() {
-  const shares = parseInt(document.getElementById('tradeShares').value) || 0;
-  const price = parseInt(document.getElementById('tradePrice').value) || 0;
-  const cost = (shares * price) / 100, payout = shares, profit = payout - cost;
-  document.getElementById('tradeCost').textContent = '$' + cost.toFixed(2);
-  document.getElementById('tradePayout').textContent = '$' + payout.toFixed(2);
-  document.getElementById('tradeProfit').textContent = '$' + profit.toFixed(2);
-  document.getElementById('tradeTotal').textContent = '$' + cost.toFixed(2);
-  document.getElementById('btnTrade').disabled = (shares <= 0 || price <= 0 || price > 99 || (currentUser && cost > currentUser.balance));
+  const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
+  if (!m || !currentUser) return;
+  const betAmount = currentUser.balance;
+  const price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+  // Payout: if you bet X tokens at Y¢, and you win, you get X * (100/Y) tokens
+  const payout = price > 0 ? (betAmount * 100 / price) : 0;
+  const profit = payout - betAmount;
+
+  document.getElementById('betAllIn').textContent = fmtTokens(betAmount);
+  document.getElementById('tradeCost').textContent = fmtTokens(betAmount);
+  document.getElementById('tradeOdds').textContent = `${price}¢ (${tradeSide === 'yes' ? m.yes : (100-m.yes)}% chance)`;
+  document.getElementById('tradePayout').textContent = fmtTokens(payout);
+  document.getElementById('tradeProfit').textContent = '+' + fmtTokens(profit);
+  document.getElementById('tradeTotal').textContent = fmtTokens(betAmount);
+  document.getElementById('btnTrade').disabled = (betAmount <= 0);
 }
 
 async function executeTrade() {
-  const shares = parseInt(document.getElementById('tradeShares').value) || 0;
-  const price = parseInt(document.getElementById('tradePrice').value) || 0;
-  if (shares <= 0 || price <= 0 || price > 99) { showToast('Invalid trade', 'error'); return; }
-  const cost = (shares * price) / 100;
-  if (cost > currentUser.balance) { showToast('Insufficient balance. Deposit more.', 'error'); return; }
+  if (!currentUser || currentUser.balance <= 0) { showToast('No tokens to bet. Buy tokens first.', 'error'); return; }
   const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
+  const betAmount = currentUser.balance;
+  const price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+  const payout = price > 0 ? (betAmount * 100 / price) : 0;
 
-  currentUser.balance -= cost;
-  if (!positions[currentMarketId]) positions[currentMarketId] = { side: tradeSide, shares: 0, totalCost: 0, marketQuestion: m.q };
-  const pos = positions[currentMarketId];
-  pos.shares += shares; pos.totalCost += cost;
-  pos.avgPrice = (pos.totalCost / pos.shares * 100).toFixed(1);
+  // All-in: balance goes to 0, position holds the bet
+  currentUser.balance = 0;
+  positions[currentMarketId] = {
+    side: tradeSide,
+    shares: betAmount,
+    totalCost: betAmount,
+    avgPrice: price,
+    potentialPayout: payout,
+    marketQuestion: m.q
+  };
 
-  tradeHistory.unshift({ time: new Date().toLocaleTimeString(), marketQuestion: m.q, side: tradeSide.toUpperCase(), shares, price: price + '¢', cost: '$' + cost.toFixed(2) });
+  tradeHistory.unshift({
+    time: new Date().toLocaleTimeString(),
+    marketQuestion: m.q,
+    side: tradeSide.toUpperCase(),
+    shares: betAmount,
+    price: price + '¢',
+    cost: fmtTokens(betAmount),
+    payout: fmtTokens(payout)
+  });
 
-  if (tradeSide === 'yes') m.yes = Math.min(99, m.yes + Math.ceil(shares / 200));
-  else m.yes = Math.max(1, m.yes - Math.ceil(shares / 200));
+  if (tradeSide === 'yes') m.yes = Math.min(99, m.yes + Math.ceil(betAmount / 500));
+  else m.yes = Math.max(1, m.yes - Math.ceil(betAmount / 500));
   m.priceHistory.push(m.yes); m.orderBook = generateOrderBook(m.yes);
 
   saveLocal();
   updateDetailPrices(m); renderOrderBook(m); renderChart(m); updateYourPosition(m);
   updateBalanceDisplay(); updateTradeSummary();
-  showToast(`Bought ${shares} ${tradeSide.toUpperCase()} @ ${price}¢ for $${cost.toFixed(2)}`, 'success');
+  showToast(`Bet ${fmtTokens(betAmount)} ALL IN on ${tradeSide.toUpperCase()} @ ${price}¢. Win: ${fmtTokens(payout)}`, 'success');
 }
 
 function updateYourPosition(m) {
@@ -1389,9 +1469,9 @@ function showPortfolio() {
     tv += (pos.shares * cp) / 100; tc += pos.totalCost;
   });
   const pnl = tv - tc;
-  document.getElementById('portCash').textContent = '$' + (currentUser ? currentUser.balance : 0).toFixed(2);
-  document.getElementById('portValue').textContent = '$' + tv.toFixed(2);
-  document.getElementById('portPnl').textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+  document.getElementById('portCash').textContent = fmtTokens(currentUser ? currentUser.balance : 0);
+  document.getElementById('portValue').textContent = fmtTokens(tv);
+  document.getElementById('portPnl').textContent = (pnl >= 0 ? '+' : '') + fmtTokens(Math.abs(pnl)).replace(' ◈', ' ◈');
   document.getElementById('portPnl').style.color = pnl >= 0 ? 'var(--primary-active)' : 'var(--red)';
   const pct = tc > 0 ? (pnl / tc * 100).toFixed(1) : '0.0';
   document.getElementById('portPnlChange').textContent = `${pnl >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%`;
@@ -1438,7 +1518,11 @@ function setDepositAmount(amt) {
   const btn = document.querySelector(`#cardDeposit .amount-btn[data-amt="${amt}"]`);
   if (btn) btn.classList.add('active');
   document.getElementById('customDeposit').value = amt > 0 ? amt : '';
-  document.querySelector('#cardDeposit .btn-deposit-final').textContent = 'Deposit $' + depositAmount.toFixed(2);
+  const tokens = calcTokens(depositAmount);
+  const bonus = getBonusPct(depositAmount);
+  const preview = document.getElementById('depositBonusPreview');
+  if (preview) preview.querySelector('span').textContent = `Pay $${depositAmount} → Receive ${tokens.toLocaleString()} tokens${bonus > 0 ? ` (+${bonus}% bonus)` : ''}`;
+  document.querySelector('#cardDeposit .btn-deposit-final').textContent = `Buy ${tokens.toLocaleString()} tokens for $${depositAmount}`;
 }
 function setCryptoAmount(amt) {
   cryptoAmount = parseInt(amt) || 0;
@@ -1446,33 +1530,73 @@ function setCryptoAmount(amt) {
   const btn = document.querySelector(`#cryptoDeposit .amount-btn[data-amt="${amt}"]`);
   if (btn) btn.classList.add('active');
   document.getElementById('cryptoDepositInput').value = amt > 0 ? amt : '';
-  document.querySelector('#cryptoDeposit .btn-deposit-final').textContent = 'Simulate crypto deposit — $' + cryptoAmount.toFixed(2);
+  const tokens = calcTokens(cryptoAmount);
+  const bonus = getBonusPct(cryptoAmount);
+  const preview = document.getElementById('cryptoBonusPreview');
+  if (preview) preview.querySelector('span').textContent = `Pay $${cryptoAmount} → Receive ${tokens.toLocaleString()} tokens${bonus > 0 ? ` (+${bonus}% bonus)` : ''}`;
+  document.querySelector('#cryptoDeposit .btn-deposit-final').textContent = `Buy ${tokens.toLocaleString()} tokens for $${cryptoAmount}`;
 }
 
 async function processDeposit() {
   const amt = depositAmount || parseInt(document.getElementById('customDeposit').value) || 0;
   if (amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
-  currentUser.balance += amt;
-  depositHistory.unshift({ time: new Date().toLocaleTimeString(), method: 'Card', amount: amt, status: 'Completed' });
+  const tokens = calcTokens(amt);
+  const bonus = getBonusPct(amt);
+  currentUser.balance += tokens;
+  depositHistory.unshift({ time: new Date().toLocaleTimeString(), method: `Card (+${bonus}% bonus)`, amount: tokens, status: 'Completed' });
   saveLocal(); updateBalanceDisplay();
-  showToast(`Deposited $${amt.toFixed(2)}`, 'success'); closeDepositModal();
+  showToast(`Bought ${tokens.toLocaleString()} tokens${bonus > 0 ? ` (+${bonus}% bonus)` : ''}`, 'success'); closeDepositModal();
 }
 
 async function processCryptoDeposit() {
   const amt = cryptoAmount || parseInt(document.getElementById('cryptoDepositInput').value) || 0;
   if (amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
-  currentUser.balance += amt;
-  depositHistory.unshift({ time: new Date().toLocaleTimeString(), method: 'Crypto (USDT)', amount: amt, status: 'Completed' });
+  const tokens = calcTokens(amt);
+  const bonus = getBonusPct(amt);
+  currentUser.balance += tokens;
+  depositHistory.unshift({ time: new Date().toLocaleTimeString(), method: `Crypto (+${bonus}% bonus)`, amount: tokens, status: 'Completed' });
   saveLocal(); updateBalanceDisplay();
-  showToast(`Deposited $${amt.toFixed(2)} via Crypto`, 'success'); closeDepositModal();
+  showToast(`Bought ${tokens.toLocaleString()} tokens${bonus > 0 ? ` (+${bonus}% bonus)` : ''}`, 'success'); closeDepositModal();
+}
+
+// ===== WITHDRAW =====
+let withdrawMethod = 'card';
+function openWithdrawModal() {
+  document.getElementById('withdrawAvailable').textContent = fmtTokens(currentUser.balance);
+  document.getElementById('withdrawAmount').value = '';
+  updateWithdrawPreview();
+  document.getElementById('withdrawModal').classList.add('active');
+}
+function closeWithdrawModal() { document.getElementById('withdrawModal').classList.remove('active'); }
+function setWithdrawMethod(method) {
+  withdrawMethod = method;
+  document.querySelectorAll('#withdrawModal .deposit-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+function setWithdrawAmount(fraction) {
+  const amt = Math.floor(currentUser.balance * fraction);
+  document.getElementById('withdrawAmount').value = amt;
+  updateWithdrawPreview();
+}
+function updateWithdrawPreview() {
+  const amt = parseInt(document.getElementById('withdrawAmount').value) || 0;
+  const preview = document.getElementById('withdrawPreview');
+  if (preview) preview.querySelector('span').textContent = `Withdraw ${amt.toLocaleString()} tokens → $${amt.toFixed(2)}`;
+}
+async function processWithdraw() {
+  const amt = parseInt(document.getElementById('withdrawAmount').value) || 0;
+  if (amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+  if (amt > currentUser.balance) { showToast('Insufficient tokens', 'error'); return; }
+  currentUser.balance -= amt;
+  depositHistory.unshift({ time: new Date().toLocaleTimeString(), method: `Withdraw via ${withdrawMethod}`, amount: -amt, status: 'Completed' });
+  saveLocal(); updateBalanceDisplay();
+  showToast(`Withdrew ${amt.toLocaleString()} tokens → $${amt.toFixed(2)}`, 'success'); closeWithdrawModal();
 }
 
 function copyWallet() { navigator.clipboard.writeText(document.getElementById('walletAddr').textContent).then(() => showToast('Wallet copied!', 'info')); }
 
 // ===== HELPERS =====
-function updateBalanceDisplay() {
-  document.getElementById('navBalance').textContent = '$' + (currentUser ? currentUser.balance.toFixed(2) : '0.00');
-}
+function updateBalanceDisplay() { document.getElementById('navBalance').textContent = fmtTokens(currentUser ? currentUser.balance : 0); }
 
 function showToast(msg, type) {
   const c = document.getElementById('toastContainer');
