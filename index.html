@@ -751,22 +751,62 @@
       </div>
       <div class="detail-right">
         <div class="panel">
-          <h4>Place bet — all in</h4>
-          <div style="background:var(--canvas-soft);border-radius:var(--r-md);padding:12px;margin-bottom:16px;text-align:center;">
-            <div style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px;">YOUR ENTIRE BALANCE</div>
-            <div style="font-size:28px;font-weight:800;color:var(--primary-active);letter-spacing:-0.5px;" id="betAllIn">0 ◈</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Win or lose it all</div>
+          <h4>Place bet</h4>
+
+          <!-- Bet mode tabs -->
+          <div class="trade-tabs" style="margin-bottom:16px;">
+            <div class="trade-tab active" data-betmode="allin" onclick="setBetMode('allin', this)">All In</div>
+            <div class="trade-tab" data-betmode="custom" onclick="setBetMode('custom', this)">Custom</div>
+            <div class="trade-tab" data-betmode="limit" onclick="setBetMode('limit', this)">Limit</div>
           </div>
+
+          <!-- YES/NO tabs -->
           <div class="trade-tabs">
             <div class="trade-tab yes-tab active" onclick="setTradeSide('yes')">Bet YES</div>
             <div class="trade-tab no-tab" onclick="setTradeSide('no')">Bet NO</div>
           </div>
+
+          <!-- All In display -->
+          <div id="allInDisplay" style="background:var(--canvas-soft);border-radius:var(--r-md);padding:12px;margin-bottom:14px;text-align:center;">
+            <div style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px;">YOUR ENTIRE BALANCE</div>
+            <div style="font-size:28px;font-weight:800;color:var(--primary-active);letter-spacing:-0.5px;" id="betAllIn">0 ◈</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">Win or lose it all</div>
+          </div>
+
+          <!-- Custom token input -->
+          <div id="customBetInput" style="display:none;margin-bottom:14px;">
+            <label style="font-size:14px;font-weight:500;color:var(--muted);display:block;margin-bottom:6px;">Token amount</label>
+            <div class="input-suffix" data-suffix="◈">
+              <input type="number" class="trade-input" id="customTokenAmount" placeholder="0" min="1" oninput="updateTradeSummary()" style="padding-right:36px;">
+            </div>
+            <div class="quick-buttons" style="margin-top:8px;">
+              <div class="quick-btn" onclick="setCustomBet(0.10)">10%</div>
+              <div class="quick-btn" onclick="setCustomBet(0.25)">25%</div>
+              <div class="quick-btn" onclick="setCustomBet(0.50)">50%</div>
+              <div class="quick-btn" onclick="setCustomBet(1)">100%</div>
+            </div>
+          </div>
+
+          <!-- Limit order input -->
+          <div id="limitBetInput" style="display:none;margin-bottom:14px;">
+            <label style="font-size:14px;font-weight:500;color:var(--muted);display:block;margin-bottom:6px;">Token amount</label>
+            <div class="input-suffix" data-suffix="◈">
+              <input type="number" class="trade-input" id="limitTokenAmount" placeholder="0" min="1" oninput="updateTradeSummary()" style="padding-right:36px;margin-bottom:8px;">
+            </div>
+            <label style="font-size:14px;font-weight:500;color:var(--muted);display:block;margin-bottom:6px;">Price per share (¢)</label>
+            <div class="input-suffix" data-suffix="¢">
+              <input type="number" class="trade-input" id="limitPriceInput" placeholder="50" min="1" max="99" oninput="updateTradeSummary()" style="padding-right:36px;">
+            </div>
+          </div>
+
+          <!-- Trade summary -->
           <div class="trade-summary">
-            <div class="row"><span>Bet amount</span><span class="val" id="tradeCost">0 ◈</span></div>
-            <div class="row"><span>Odds</span><span class="val" id="tradeOdds">--</span></div>
-            <div class="row"><span>If YES wins</span><span class="val" id="tradePayout" style="color:var(--primary-active);font-weight:700;">0 ◈</span></div>
+            <div class="row"><span>Tokens bet</span><span class="val" id="tradeCost">0 ◈</span></div>
+            <div class="row"><span>Price / share</span><span class="val" id="tradeOdds">--</span></div>
+            <div class="row"><span>Shares</span><span class="val" id="tradeSharesDisplay">0</span></div>
+            <div class="row"><span>If wins</span><span class="val" id="tradePayout" style="color:var(--primary-active);font-weight:700;">0 ◈</span></div>
             <div class="row"><span>Potential profit</span><span class="val" id="tradeProfit" style="color:var(--primary-active);">0 ◈</span></div>
-            <div class="row total"><span>All in</span><span class="val" id="tradeTotal">0 ◈</span></div>
+            <div class="row total"><span>Total bet</span><span class="val" id="tradeTotal">0 ◈</span></div>
           </div>
           <button class="btn-trade yes" id="btnTrade" onclick="executeTrade()">Bet ALL on YES</button>
         </div>
@@ -1372,53 +1412,130 @@ function renderChart(m) {
   `;
 }
 
-function setTradeSide(side) {
-  tradeSide = side;
-  document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(side === 'yes' ? '.yes-tab' : '.no-tab').classList.add('active');
-  const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
-  const btn = document.getElementById('btnTrade');
-  btn.className = 'btn-trade ' + side; btn.textContent = `Bet ALL on ${side.toUpperCase()}`;
+// ===== BET MODES =====
+let betMode = 'allin';
+
+function setBetMode(mode, btn) {
+  betMode = mode;
+  // Update bet mode tabs
+  document.querySelectorAll('[data-betmode]').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Toggle input sections
+  document.getElementById('allInDisplay').style.display = mode === 'allin' ? 'block' : 'none';
+  document.getElementById('customBetInput').style.display = mode === 'custom' ? 'block' : 'none';
+  document.getElementById('limitBetInput').style.display = mode === 'limit' ? 'block' : 'none';
+  // Set default limit price
+  if (mode === 'limit') {
+    const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
+    if (m) document.getElementById('limitPriceInput').value = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+  }
   updateTradeSummary();
 }
 
-function setShareQuick(n) { /* unused in all-in mode */ }
+function setCustomBet(fraction) {
+  const amt = Math.floor((currentUser ? currentUser.balance : 0) * fraction);
+  document.getElementById('customTokenAmount').value = amt;
+  updateTradeSummary();
+}
+
+function setTradeSide(side) {
+  tradeSide = side;
+  document.querySelectorAll('.trade-tab').forEach(t => {
+    if (t.dataset.betmode) return; // skip bet mode tabs
+    t.classList.remove('active');
+  });
+  document.querySelector(side === 'yes' ? '.yes-tab' : '.no-tab').classList.add('active');
+  const btn = document.getElementById('btnTrade');
+  btn.className = 'btn-trade ' + side;
+  if (betMode === 'limit') {
+    const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
+    if (m) document.getElementById('limitPriceInput').value = side === 'yes' ? m.yes : (100 - m.yes);
+  }
+  updateTradeButton();
+  updateTradeSummary();
+}
+
+function updateTradeButton() {
+  const btn = document.getElementById('btnTrade');
+  const labels = {
+    allin: `Bet ALL on ${tradeSide.toUpperCase()}`,
+    custom: `Bet on ${tradeSide.toUpperCase()}`,
+    limit: `Place Limit on ${tradeSide.toUpperCase()}`
+  };
+  btn.textContent = labels[betMode] || labels.allin;
+}
 
 function updateTradeSummary() {
   const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
   if (!m || !currentUser) return;
-  const betAmount = currentUser.balance;
-  const price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
-  // Payout: if you bet X tokens at Y¢, and you win, you get X * (100/Y) tokens
+
+  let betAmount, price, shares;
+
+  if (betMode === 'allin') {
+    betAmount = currentUser.balance;
+    price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+    shares = Math.floor(betAmount * 100 / price) || 0;
+  } else if (betMode === 'custom') {
+    betAmount = parseInt(document.getElementById('customTokenAmount').value) || 0;
+    betAmount = Math.min(betAmount, currentUser.balance);
+    price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+    shares = Math.floor(betAmount * 100 / price) || 0;
+  } else if (betMode === 'limit') {
+    betAmount = parseInt(document.getElementById('limitTokenAmount').value) || 0;
+    betAmount = Math.min(betAmount, currentUser.balance);
+    price = parseInt(document.getElementById('limitPriceInput').value) || (tradeSide === 'yes' ? m.yes : (100 - m.yes));
+    shares = Math.floor(betAmount * 100 / price) || 0;
+  }
+
   const payout = price > 0 ? (betAmount * 100 / price) : 0;
   const profit = payout - betAmount;
 
-  document.getElementById('betAllIn').textContent = fmtTokens(betAmount);
+  if (betMode === 'allin') document.getElementById('betAllIn').textContent = fmtTokens(betAmount);
   document.getElementById('tradeCost').textContent = fmtTokens(betAmount);
   document.getElementById('tradeOdds').textContent = `${price}¢ (${tradeSide === 'yes' ? m.yes : (100-m.yes)}% chance)`;
+  document.getElementById('tradeSharesDisplay').textContent = shares.toLocaleString();
   document.getElementById('tradePayout').textContent = fmtTokens(payout);
   document.getElementById('tradeProfit').textContent = '+' + fmtTokens(profit);
   document.getElementById('tradeTotal').textContent = fmtTokens(betAmount);
-  document.getElementById('btnTrade').disabled = (betAmount <= 0);
+  document.getElementById('btnTrade').disabled = (betAmount <= 0 || price <= 0 || price > 99);
 }
 
 async function executeTrade() {
   if (!currentUser || currentUser.balance <= 0) { showToast('No tokens to bet. Buy tokens first.', 'error'); return; }
   const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
-  const betAmount = currentUser.balance;
-  const price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+
+  let betAmount, price, shares;
+
+  if (betMode === 'allin') {
+    betAmount = currentUser.balance;
+    price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+  } else if (betMode === 'custom') {
+    betAmount = parseInt(document.getElementById('customTokenAmount').value) || 0;
+    if (betAmount > currentUser.balance) { showToast('Insufficient tokens', 'error'); return; }
+    price = tradeSide === 'yes' ? m.yes : (100 - m.yes);
+  } else if (betMode === 'limit') {
+    betAmount = parseInt(document.getElementById('limitTokenAmount').value) || 0;
+    price = parseInt(document.getElementById('limitPriceInput').value) || 0;
+    if (betAmount > currentUser.balance) { showToast('Insufficient tokens', 'error'); return; }
+    if (price <= 0 || price > 99) { showToast('Invalid price (1-99¢)', 'error'); return; }
+  }
+
+  if (betAmount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+  shares = Math.floor(betAmount * 100 / price) || 0;
   const payout = price > 0 ? (betAmount * 100 / price) : 0;
 
-  // All-in: balance goes to 0, position holds the bet
-  currentUser.balance = 0;
-  positions[currentMarketId] = {
-    side: tradeSide,
-    shares: betAmount,
-    totalCost: betAmount,
-    avgPrice: price,
-    potentialPayout: payout,
-    marketQuestion: m.q
-  };
+  currentUser.balance -= betAmount;
+
+  // Add to existing position or create new
+  if (!positions[currentMarketId]) {
+    positions[currentMarketId] = { side: tradeSide, shares: 0, totalCost: 0, marketQuestion: m.q };
+  }
+  const pos = positions[currentMarketId];
+  pos.shares += betAmount;
+  pos.totalCost += betAmount;
+  pos.avgPrice = (pos.totalCost / pos.shares * 100).toFixed(1);
+  pos.potentialPayout = (pos.totalCost * 100 / parseInt(pos.avgPrice)) || 0;
 
   tradeHistory.unshift({
     time: new Date().toLocaleTimeString(),
@@ -1427,7 +1544,8 @@ async function executeTrade() {
     shares: betAmount,
     price: price + '¢',
     cost: fmtTokens(betAmount),
-    payout: fmtTokens(payout)
+    payout: fmtTokens(payout),
+    mode: betMode
   });
 
   if (tradeSide === 'yes') m.yes = Math.min(99, m.yes + Math.ceil(betAmount / 500));
@@ -1437,7 +1555,7 @@ async function executeTrade() {
   saveLocal();
   updateDetailPrices(m); renderOrderBook(m); renderChart(m); updateYourPosition(m);
   updateBalanceDisplay(); updateTradeSummary();
-  showToast(`Bet ${fmtTokens(betAmount)} ALL IN on ${tradeSide.toUpperCase()} @ ${price}¢. Win: ${fmtTokens(payout)}`, 'success');
+  showToast(`Bet ${fmtTokens(betAmount)} on ${tradeSide.toUpperCase()} @ ${price}¢ | ${shares.toLocaleString()} shares | Win: ${fmtTokens(payout)}`, 'success');
 }
 
 function updateYourPosition(m) {
