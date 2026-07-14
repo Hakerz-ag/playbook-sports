@@ -691,7 +691,10 @@
     </div>
     <div class="section-title">
       <span>Live markets</span>
-      <span class="live-badge"><span class="live-dot"></span> Real-time prices</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="cat-filter" id="liveToggle" onclick="toggleLiveMode()" style="display:none;">Live ESPN</button>
+        <span class="live-badge"><span class="live-dot"></span> Real-time prices</span>
+      </div>
     </div>
     <div class="market-grid" id="marketGrid"></div>
   </div>
@@ -961,6 +964,90 @@ function showApp() {
   document.getElementById('mainApp').style.display = 'block';
   updateBalanceDisplay();
   renderMarkets();
+  loadLiveMarkets(); // fetch real ESPN data
+}
+
+// ===== ESPN LIVE MARKETS =====
+let liveMarkets = [];
+let liveMode = false;
+
+async function loadLiveMarkets() {
+  try {
+    const resp = await fetch(`${API}/api/markets/live`);
+    const data = await resp.json();
+    if (data.success && data.markets.length > 0) {
+      liveMarkets = data.markets.map(m => {
+        // Generate price history for live markets
+        const ph = [];
+        let p = m.yes;
+        for (let i = 0; i < 30; i++) { p = Math.max(1, Math.min(99, p + (Math.random() - 0.5) * 6)); ph.push(Math.round(p)); }
+        ph.push(m.yes);
+        return {
+          ...m,
+          priceHistory: ph,
+          orderBook: generateOrderBook(m.yes),
+          isLive: true,
+        };
+      });
+      // Update the live toggle button
+      const toggle = document.getElementById('liveToggle');
+      if (toggle) {
+        toggle.textContent = `Live ESPN: ${liveMarkets.length} markets`;
+        toggle.style.display = 'inline-flex';
+      }
+    }
+  } catch (e) {
+    // Server might not be running -- keep static markets
+  }
+}
+
+function toggleLiveMode() {
+  liveMode = !liveMode;
+  const toggle = document.getElementById('liveToggle');
+  if (liveMode) {
+    toggle.style.background = 'var(--primary)';
+    toggle.style.color = 'white';
+    toggle.style.borderColor = 'var(--primary)';
+    // Rebuild category filters for live sports
+    rebuildCategoryFilters(true);
+  } else {
+    toggle.style.background = '';
+    toggle.style.color = '';
+    toggle.style.borderColor = '';
+    rebuildCategoryFilters(false);
+  }
+  currentFilter = 'all';
+  document.querySelectorAll('.cat-filter').forEach(el => el.classList.toggle('active', el.dataset.cat === 'all'));
+  renderMarkets();
+}
+
+function rebuildCategoryFilters(isLive) {
+  const container = document.getElementById('catFilters');
+  if (isLive) {
+    // Get unique categories from live markets
+    const cats = [...new Set(liveMarkets.map(m => m.cat))];
+    const catNames = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', nhl: 'NHL', mls: 'MLS', epl: 'EPL', la_liga: 'La Liga', f1: 'F1', atp: 'Tennis', cfb: 'CFB', soccer: 'Soccer' };
+    const catIcons = { nfl: '🏈', nba: '🏀', mlb: '⚾', nhl: '🏒', mls: '⚽', epl: '⚽', la_liga: '⚽', f1: '🏎️', atp: '🎾', cfb: '🏈', soccer: '⚽' };
+    container.innerHTML = `<div class="cat-filter active" data-cat="all" onclick="filterCategory('all')">All live</div>` +
+      cats.map(c => `<div class="cat-filter" data-cat="${c}" onclick="filterCategory('${c}')">${catIcons[c] || ''} ${catNames[c] || c}</div>`).join('');
+  } else {
+    container.innerHTML = `
+      <div class="cat-filter active" data-cat="all" onclick="filterCategory('all')">All sports</div>
+      <div class="cat-filter" data-cat="nfl" onclick="filterCategory('nfl')">🏈 NFL</div>
+      <div class="cat-filter" data-cat="nba" onclick="filterCategory('nba')">🏀 NBA</div>
+      <div class="cat-filter" data-cat="mlb" onclick="filterCategory('mlb')">⚾ MLB</div>
+      <div class="cat-filter" data-cat="mls" onclick="filterCategory('mls')">⚽ MLS</div>
+      <div class="cat-filter" data-cat="f1" onclick="filterCategory('f1')">🏎️ F1</div>
+      <div class="cat-filter" data-cat="ufc" onclick="filterCategory('ufc')">🥊 UFC</div>
+      <div class="cat-filter" data-cat="tennis" onclick="filterCategory('tennis')">🎾 Tennis</div>
+      <div class="cat-filter" data-cat="golf" onclick="filterCategory('golf')">⛳ Golf</div>
+      <div class="cat-filter" data-cat="nhl" onclick="filterCategory('nhl')">🏒 NHL</div>
+      <div class="cat-filter" data-cat="soccer" onclick="filterCategory('soccer')">⚽ Soccer</div>`;
+  }
+}
+
+function getActiveMarkets() {
+  return liveMode ? liveMarkets : markets;
 }
 
 async function signOut() {
@@ -1005,20 +1092,26 @@ async function loadPortfolioData() {
 
 // ===== RENDER =====
 function renderMarkets() {
-  const catNames = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', mls: 'MLS', f1: 'F1', ufc: 'UFC', tennis: 'Tennis', golf: 'Golf', nhl: 'NHL', soccer: 'Soccer' };
-  const catIcons = { nfl: '🏈', nba: '🏀', mlb: '⚾', mls: '⚽', f1: '🏎️', ufc: '🥊', tennis: '🎾', golf: '⛳', nhl: '🏒', soccer: '⚽' };
-  const filtered = currentFilter === 'all' ? markets : markets.filter(m => m.cat === currentFilter);
+  const catNames = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', mls: 'MLS', f1: 'F1', ufc: 'UFC', tennis: 'Tennis', golf: 'Golf', nhl: 'NHL', soccer: 'Soccer', epl: 'EPL', la_liga: 'La Liga', atp: 'Tennis', cfb: 'CFB' };
+  const catIcons = { nfl: '🏈', nba: '🏀', mlb: '⚾', mls: '⚽', f1: '🏎️', ufc: '🥊', tennis: '🎾', golf: '⛳', nhl: '🏒', soccer: '⚽', epl: '⚽', la_liga: '⚽', atp: '🎾', cfb: '🏈' };
+  const allMarkets = getActiveMarkets();
+  const filtered = currentFilter === 'all' ? allMarkets : allMarkets.filter(m => m.cat === currentFilter);
   document.getElementById('marketGrid').innerHTML = filtered.map(m => {
     const change = m.priceHistory.length > 1 ? m.yes - m.priceHistory[m.priceHistory.length - 2] : 0;
     const cc = change >= 0 ? 'change-up' : 'change-down';
     const ci = change >= 0 ? '▲' : '▼';
+    const liveBadge = m.isLive ? '<span style="font-size:10px;background:var(--primary);color:white;padding:1px 6px;border-radius:var(--r-pill);margin-left:6px;font-weight:600;">LIVE</span>' : '';
+    const logos = (m.homeLogo && m.awayLogo) ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><img src="${m.homeLogo}" style="width:28px;height:28px;" onerror="this.style.display=\'none\'"><span style="font-size:12px;color:var(--muted);">vs</span><img src="${m.awayLogo}" style="width:28px;height:28px;" onerror="this.style.display=\'none\'"></div>` : '';
+    const score = (m.status && m.status !== 'STATUS_SCHEDULED' && m.homeScore !== undefined) ? `<span style="font-size:13px;font-weight:600;color:var(--ink);">${m.awayScore}-${m.homeScore}</span>` : '';
+    const spreadInfo = m.spread ? ` · ${m.spread}` : '';
     return `<div class="market-card" onclick="showMarketDetail('${m.id}')">
-      <div class="league-badge badge-${m.cat}">${catIcons[m.cat]} ${catNames[m.cat]}</div>
+      <div class="league-badge badge-${m.cat}">${catIcons[m.cat] || ''} ${catNames[m.cat] || m.catLabel || m.cat}${liveBadge}</div>
+      ${logos}
       <h3>${m.q}</h3>
       <div class="price-row"><div><div class="yes-price">${m.yes}¢</div><div class="price-label">YES</div></div>
-      <div style="text-align:right;"><div class="volume">${m.vol}</div><div class="volume-label">Volume</div></div></div>
+      <div style="text-align:right;"><div class="volume">${m.vol}</div><div class="volume-label">${score || 'Volume'}</div></div></div>
       <div class="progress-bar"><div class="progress-yes" style="width:${m.yes}%"></div><div class="progress-no" style="width:${100-m.yes}%"></div></div>
-      <div class="change-row"><span class="${cc}">${ci} ${Math.abs(change)}¢</span><span class="time-left">${m.timeLeft}</span></div>
+      <div class="change-row"><span class="${cc}">${ci} ${Math.abs(change)}¢${spreadInfo}</span><span class="time-left">${m.timeLeft}</span></div>
     </div>`;
   }).join('');
   document.getElementById('totalMarkets').textContent = filtered.length;
@@ -1032,15 +1125,19 @@ function filterCategory(cat) {
 
 function showMarketDetail(id) {
   currentMarketId = id;
-  const m = markets.find(x => x.id === id);
+  const allMarkets = getActiveMarkets();
+  const m = allMarkets.find(x => x.id === id) || markets.find(x => x.id === id);
   if (!m) return;
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
   document.getElementById('marketsView').classList.add('hidden');
   document.getElementById('detailView').classList.add('active');
   document.getElementById('portfolioView').classList.remove('active');
-  const catNames = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', mls: 'MLS', f1: 'F1', ufc: 'UFC', tennis: 'Tennis', golf: 'Golf', nhl: 'NHL', soccer: 'Soccer' };
-  const catIcons = { nfl: '🏈', nba: '🏀', mlb: '⚾', mls: '⚽', f1: '🏎️', ufc: '🥊', tennis: '🎾', golf: '⛳', nhl: '🏒', soccer: '⚽' };
-  document.getElementById('detailHeader').innerHTML = `<div class="league-badge badge-${m.cat}">${catIcons[m.cat]} ${catNames[m.cat]}</div><h2>${m.q}</h2><div class="meta"><span>Volume: ${m.vol}</span><span>Ends in ${m.timeLeft}</span><span>Auto-resolves</span></div>`;
+  const catNames = { nfl: 'NFL', nba: 'NBA', mlb: 'MLB', mls: 'MLS', f1: 'F1', ufc: 'UFC', tennis: 'Tennis', golf: 'Golf', nhl: 'NHL', soccer: 'Soccer', epl: 'EPL', la_liga: 'La Liga', atp: 'Tennis', cfb: 'CFB' };
+  const catIcons = { nfl: '🏈', nba: '🏀', mlb: '⚾', mls: '⚽', f1: '🏎️', ufc: '🥊', tennis: '🎾', golf: '⛳', nhl: '🏒', soccer: '⚽', epl: '⚽', la_liga: '⚽', atp: '🎾', cfb: '🏈' };
+  const liveBadge = m.isLive ? ' <span style="font-size:11px;background:var(--primary);color:white;padding:2px 8px;border-radius:var(--r-pill);font-weight:600;">LIVE</span>' : '';
+  const teamLogos = (m.homeLogo && m.awayLogo) ? `<div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;"><img src="${m.homeLogo}" style="width:48px;height:48px;" onerror="this.style.display=\'none\'"><span style="font-size:16px;color:var(--muted);">vs</span><img src="${m.awayLogo}" style="width:48px;height:48px;" onerror="this.style.display=\'none\'"></div>` : '';
+  const scoreLine = (m.status && m.status !== 'STATUS_SCHEDULED' && m.homeScore !== undefined) ? `<span>${m.awayScore}-${m.homeScore} (${m.statusDetail})</span>` : '';
+  document.getElementById('detailHeader').innerHTML = `<div class="league-badge badge-${m.cat}">${catIcons[m.cat] || ''} ${catNames[m.cat] || m.catLabel || m.cat}${liveBadge}</div>${teamLogos}<h2>${m.q}</h2><div class="meta"><span>Volume: ${m.vol}</span><span>${m.timeLeft}</span>${scoreLine}<span>Auto-resolves</span></div>`;
   updateDetailPrices(m); renderOrderBook(m); renderChart(m);
   document.getElementById('detailDescription').textContent = m.desc;
   updateYourPosition(m); updateTradeSummary();
@@ -1100,7 +1197,7 @@ async function executeTrade() {
   const shares = parseInt(document.getElementById('tradeShares').value) || 0;
   const price = parseInt(document.getElementById('tradePrice').value) || 0;
   if (shares <= 0 || price <= 0 || price > 99) { showToast('Invalid trade', 'error'); return; }
-  const m = markets.find(x => x.id === currentMarketId);
+  const m = getActiveMarkets().find(x => x.id === currentMarketId) || markets.find(x => x.id === currentMarketId);
   const data = await apiTrade(m.id, m.q, tradeSide, shares, price);
   if (!data.success) { showToast(data.error || 'Trade failed', 'error'); return; }
   currentUser.balance = data.balance;
@@ -1243,7 +1340,8 @@ function toggleTheme() {
 
 // ===== LIVE TICKER =====
 setInterval(() => {
-  markets.forEach(m => {
+  const all = getActiveMarkets();
+  all.forEach(m => {
     const ch = (Math.random() - 0.5) * 3;
     m.yes = Math.max(1, Math.min(99, Math.round(m.yes + ch)));
     m.priceHistory.push(m.yes); if (m.priceHistory.length > 50) m.priceHistory.shift();
@@ -1251,7 +1349,7 @@ setInterval(() => {
   });
   if (!document.getElementById('marketsView').classList.contains('hidden')) renderMarkets();
   if (currentMarketId && document.getElementById('detailView').classList.contains('active')) {
-    const m = markets.find(x => x.id === currentMarketId);
+    const m = all.find(x => x.id === currentMarketId);
     if (m) { updateDetailPrices(m); renderChart(m); updateYourPosition(m); }
   }
 }, 4000);
