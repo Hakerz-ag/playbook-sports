@@ -7,46 +7,39 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* === PALETTE: Off-white + Light Green === */
-      /* Airbnb-style single accent — green replaces Rausch */
-      --primary: #4caf50;
-      --primary-active: #43a047;
-      --primary-disabled: #c8e6c9;
-      --primary-light: #e8f5e9;
-      --primary-border: #a5d6a7;
+      /* === PALETTE: Off-white + Blue === */
+      --primary: #1976d2;
+      --primary-active: #1565c0;
+      --primary-disabled: #bbdefb;
+      --primary-light: #e3f2fd;
+      --primary-border: #90caf9;
 
-      /* Surfaces — Airbnb canvas philosophy */
+      /* Surfaces */
       --canvas: #ffffff;
-      --canvas-soft: #f7f9f7;       /* off-white */
-      --canvas-softer: #f0f4f0;
-      --surface-strong: #ebeeeb;
-      --surface-pressed: #dfe4df;
+      --canvas-soft: #f7f9fb;
+      --canvas-softer: #f0f3f7;
+      --surface-strong: #ebf0f5;
+      --surface-pressed: #dfe5ec;
 
-      /* Text — Airbnb ink hierarchy */
-      --ink: #1a2e1a;
-      --body: #3f5142;
-      --muted: #6a7d6e;
-      --muted-soft: #92a395;
+      /* Text */
+      --ink: #1a2332;
+      --body: #3f4f5f;
+      --muted: #6a7888;
+      --muted-soft: #92a0b0;
 
       /* Hairlines */
-      --hairline: #d4e0d4;
-      --hairline-soft: #e8eee8;
-      --border-strong: #bcc8bc;
+      --hairline: #d0d8e4;
+      --hairline-soft: #e4eaf0;
+      --border-strong: #b0bcc8;
 
       /* Semantic */
       --red: #e53935;
       --red-bg: #fce8e8;
       --red-dark: #c62828;
-      --link: #2e7d32;
+      --link: #1565c0;
 
-      /* Blue accent */
-      --blue: #1976d2;
-      --blue-active: #1565c0;
-      --blue-light: #e3f2fd;
-      --blue-border: #90caf9;
-
-      /* Shadows — Airbnb single-tier + Uber pill-float */
-      --shadow-card: rgba(46,125,50,0.04) 0 0 0 1px, rgba(46,125,50,0.06) 0 2px 6px, rgba(46,125,50,0.08) 0 4px 8px;
+      /* Shadows */
+      --shadow-card: rgba(25,118,210,0.04) 0 0 0 1px, rgba(25,118,210,0.06) 0 2px 6px, rgba(25,118,210,0.08) 0 4px 8px;
       --shadow-float: rgba(0,0,0,0.12) 0px 2px 8px 0px;
       --shadow-modal: rgba(0,0,0,0.16) 0px 4px 16px 0px;
 
@@ -72,37 +65,31 @@
 
     /* === DARK THEME === */
     [data-theme="dark"] {
-      --primary: #66bb6a;
-      --primary-active: #81c784;
-      --primary-disabled: #2e3b2e;
-      --primary-light: #1b2e1b;
-      --primary-border: #2e5e2e;
+      --primary: #42a5f5;
+      --primary-active: #64b5f6;
+      --primary-disabled: #1a2a3a;
+      --primary-light: #0d1f3d;
+      --primary-border: #1565c0;
 
-      --canvas: #1a1d1a;
-      --canvas-soft: #141714;
-      --canvas-softer: #1e221e;
-      --surface-strong: #252925;
-      --surface-pressed: #2e332e;
+      --canvas: #161a22;
+      --canvas-soft: #111520;
+      --canvas-softer: #1b2030;
+      --surface-strong: #222938;
+      --surface-pressed: #2a3142;
 
-      --ink: #e8f0e8;
-      --body: #b0c0b0;
-      --muted: #6a7d6a;
-      --muted-soft: #4a5a4a;
+      --ink: #e8eef5;
+      --body: #a0b0c0;
+      --muted: #6a7a8a;
+      --muted-soft: #4a5a6a;
 
-      --hairline: #2a302a;
-      --hairline-soft: #222622;
-      --border-strong: #3a403a;
+      --hairline: #262e3a;
+      --hairline-soft: #1e2430;
+      --border-strong: #3a4252;
 
       --red: #ef5350;
-      --red-bg: #2e1a1a;
+      --red-bg: #2a1a1a;
       --red-dark: #ef5350;
-      --link: #81c784;
-
-      /* Blue accent (dark) */
-      --blue: #42a5f5;
-      --blue-active: #64b5f6;
-      --blue-light: #0d1f3d;
-      --blue-border: #1565c0;
+      --link: #64b5f6;
 
       --shadow-card: rgba(0,0,0,0.3) 0 0 0 1px, rgba(0,0,0,0.4) 0 2px 6px, rgba(0,0,0,0.5) 0 4px 8px;
       --shadow-float: rgba(0,0,0,0.4) 0px 2px 8px 0px;
@@ -244,7 +231,7 @@
       position: absolute;
       top: -20%; right: -5%;
       width: 320px; height: 320px;
-      background: radial-gradient(circle, rgba(76,175,80,0.08) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(25,118,210,0.08) 0%, transparent 70%);
       border-radius: 50%;
     }
 
@@ -817,19 +804,19 @@
     /* Dark mode badge overrides */
     [data-theme="dark"] .badge-nfl { background: #0d1f3d; color: #64b5f6; }
     [data-theme="dark"] .badge-nba { background: #2e1e0a; color: #ffb74d; }
-    [data-theme="dark"] .badge-mlb { background: #2e1a1a; color: #ef5350; }
-    [data-theme="dark"] .badge-mls { background: #1b2e1b; color: #81c784; }
-    [data-theme="dark"] .badge-f1 { background: #2e0a0a; color: #ef5350; }
+    [data-theme="dark"] .badge-mlb { background: #2a1a1a; color: #ef5350; }
+    [data-theme="dark"] .badge-mls { background: #0d1f3d; color: #64b5f6; }
+    [data-theme="dark"] .badge-f1 { background: #2a0a0a; color: #ef5350; }
     [data-theme="dark"] .badge-ufc { background: #2a2018; color: #bcaaa4; }
-    [data-theme="dark"] .badge-tennis { background: #1b2e1b; color: #81c784; }
+    [data-theme="dark"] .badge-tennis { background: #0d1f3d; color: #64b5f6; }
     [data-theme="dark"] .badge-golf { background: #1a2410; color: #aed581; }
     [data-theme="dark"] .badge-olympics { background: #0d1f3d; color: #64b5f6; }
-    [data-theme="dark"] .badge-soccer { background: #1b2e1b; color: #81c784; }
+    [data-theme="dark"] .badge-soccer { background: #0d1f3d; color: #64b5f6; }
     [data-theme="dark"] .badge-nhl { background: #0d1f3d; color: #64b5f6; }
 
     /* Dark mode hero */
     [data-theme="dark"] .hero { background: var(--canvas); }
-    [data-theme="dark"] .hero::after { background: radial-gradient(circle, rgba(102,187,106,0.06) 0%, transparent 70%); }
+    [data-theme="dark"] .hero::after { background: radial-gradient(circle, rgba(66,165,245,0.06) 0%, transparent 70%); }
 
     /* Dark mode amount-btn active */
     [data-theme="dark"] .amount-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary-active); }
@@ -840,43 +827,43 @@
     /* Dark mode modal overlay */
     [data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.7); }
 
-    /* ===== BLUE ACCENT ===== */
-    .blue-accent { color: var(--blue); }
+    /* ===== BLUE ACCENT (now primary — utilities kept for compat) ===== */
+    .blue-accent { color: var(--primary); }
     .btn-blue {
-      background: var(--blue);
+      background: var(--primary);
       color: white; border: none;
       padding: var(--s-md) var(--s-lg);
       border-radius: var(--r-pill);
       font-weight: 600; font-size: 16px; line-height: 1.25;
       cursor: pointer; transition: background 0.2s;
     }
-    .btn-blue:hover { background: var(--blue-active); }
+    .btn-blue:hover { background: var(--primary-active); }
 
     /* Blue accent text on market cards */
-    .market-card .blue-price { font-size: 24px; font-weight: 700; color: var(--blue); letter-spacing: -0.5px; }
+    .market-card .blue-price { font-size: 24px; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
 
     /* Blue badge variant */
-    .badge-blue { background: var(--blue-light); color: var(--blue-active); }
+    .badge-blue { background: var(--primary-light); color: var(--primary-active); }
 
     /* Blue progress bar segment */
-    .progress-blue { background: var(--blue); height: 100%; transition: width 0.5s; }
+    .progress-blue { background: var(--primary); height: 100%; transition: width 0.5s; }
 
     /* Blue big-price panel */
-    .big-price.blue { background: var(--blue-light); border-color: var(--blue-border); }
-    .big-price.blue .label { color: var(--blue-active); }
-    .big-price.blue .price { color: var(--blue); }
+    .big-price.blue { background: var(--primary-light); border-color: var(--primary-border); }
+    .big-price.blue .label { color: var(--primary-active); }
+    .big-price.blue .price { color: var(--primary); }
 
     /* Blue trade tab */
-    .trade-tab.active.blue-tab { color: var(--blue-active); border-bottom-color: var(--blue); }
-    .btn-trade.blue { background: var(--blue); }
-    .btn-trade.blue:hover { background: var(--blue-active); }
+    .trade-tab.active.blue-tab { color: var(--primary-active); border-bottom-color: var(--primary); }
+    .btn-trade.blue { background: var(--primary); }
+    .btn-trade.blue:hover { background: var(--primary-active); }
 
     /* Blue stat in portfolio */
-    .stat-card .change.blue { color: var(--blue-active); }
-    .positions-table .pos-blue { color: var(--blue-active); font-weight: 600; }
+    .stat-card .change.blue { color: var(--primary-active); }
+    .positions-table .pos-blue { color: var(--primary-active); font-weight: 600; }
 
     /* Blue deposit tab option */
-    .deposit-tab.blue-active { color: var(--blue-active); border-bottom-color: var(--blue); }
+    .deposit-tab.blue-active { color: var(--primary-active); border-bottom-color: var(--primary); }
 
     /* Mobile */
     @media (max-width: 768px) {
